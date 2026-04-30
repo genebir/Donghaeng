@@ -13,6 +13,8 @@ from app.domains.auth.router import router as auth_router
 from app.domains.org.router import router as org_router
 from app.domains.outreach.router import flat_router as outreach_flat_router
 from app.domains.outreach.router import nested_router as outreach_nested_router
+from app.domains.team.router import flat_router as team_flat_router
+from app.domains.team.router import nested_router as team_nested_router
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +50,8 @@ def create_app() -> FastAPI:
     app.include_router(org_router, prefix="/api/v1")
     app.include_router(outreach_nested_router, prefix="/api/v1")
     app.include_router(outreach_flat_router, prefix="/api/v1")
+    app.include_router(team_nested_router, prefix="/api/v1")
+    app.include_router(team_flat_router, prefix="/api/v1")
 
     @app.get("/healthz", tags=["meta"])
     async def healthz() -> dict[str, str]:

@@ -15,6 +15,8 @@ from app.domains.outreach.schemas import (
     OutreachPublic,
     OutreachUpdate,
 )
+from app.domains.team import service as team_service
+from app.domains.team.schemas import TeamPublic
 
 # /api/v1/orgs/{org_id}/outreaches
 nested_router = APIRouter(
@@ -49,9 +51,19 @@ async def create_outreach(
 
 
 @flat_router.get("/{outreach_id}")
-async def get_outreach(outreach: OutreachContext) -> dict[str, Any]:
-    # TODO(team): Team 도메인 추가 후 응답에 teams 리스트 포함 (API.md 명세).
-    return {"data": _to_dict(outreach)}
+async def get_outreach(
+    outreach: OutreachContext, db: DbSession
+) -> dict[str, Any]:
+    teams = await team_service.list_teams_in_outreach(db, outreach.id)
+    return {
+        "data": {
+            **_to_dict(outreach),
+            "teams": [
+                TeamPublic.model_validate(t).model_dump(mode="json")
+                for t in teams
+            ],
+        }
+    }
 
 
 @flat_router.patch("/{outreach_id}")
