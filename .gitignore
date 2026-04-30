@@ -1,0 +1,46 @@
+# env / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# node / next
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.pnpm-store/
+.npm/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# logs / runtime
+*.log
+logs/
+tmp/
+
+# docker volumes
+.docker-data/
+
+# uploads (local minio data)
+.minio-data/
