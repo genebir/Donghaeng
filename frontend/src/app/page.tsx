@@ -1,3 +1,5 @@
+import { Avatar, Button, Card, Input, Tag } from "@/components/ui";
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-paper text-ink">
@@ -16,16 +18,10 @@ export default function Home() {
           <hr className="mt-8 border-ink/15" />
         </header>
 
-        {/*
-         * 토큰 시각 검증 영역. 실제 랜딩은 다음 작업에서 DESIGN.md 부록 B
-         * (midnight 헤더 + 픽셀 십자가 + paper 본문)대로 만든다.
-         */}
-        <section aria-label="디자인 토큰 미리보기" className="space-y-10">
-          <div>
-            <p className="tracking-overline text-overline uppercase text-ink-soft">
-              컬러
-            </p>
-            <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-7">
+        {/* 토큰 시각 검증. 실제 랜딩은 다음 작업에서 부록 B대로 구현. */}
+        <div className="space-y-section">
+          <Section title="컬러">
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-7">
               {[
                 ["paper", "bg-paper"],
                 ["paper-deep", "bg-paper-deep"],
@@ -48,13 +44,10 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Section>
 
-          <div>
-            <p className="tracking-overline text-overline uppercase text-ink-soft">
-              타이포
-            </p>
-            <div className="mt-3 space-y-3">
+          <Section title="타이포">
+            <div className="space-y-3">
               <p className="font-display text-display-md">
                 함께 걷는 여름<span className="text-coral">.</span>
               </p>
@@ -72,33 +65,122 @@ export default function Home() {
                 캡션 / 라벨 (caption)
               </p>
             </div>
-          </div>
+          </Section>
 
-          <div>
-            <p className="tracking-overline text-overline uppercase text-ink-soft">
-              상태
-            </p>
-            <div className="mt-3 flex flex-wrap gap-3 text-caption">
-              <span className="inline-flex items-center rounded-sm border border-ink px-2 py-0.5 font-semibold uppercase tracking-wide">
-                기본
-              </span>
-              <span className="inline-flex items-center rounded-sm border border-mustard px-2 py-0.5 font-semibold uppercase tracking-wide text-mustard">
-                진행중
-              </span>
-              <span className="inline-flex items-center rounded-sm border border-sage px-2 py-0.5 font-semibold uppercase tracking-wide text-sage">
-                완료
-              </span>
-              <span className="inline-flex items-center rounded-sm border border-rust px-2 py-0.5 font-semibold uppercase tracking-wide text-rust">
-                위험
-              </span>
+          <Section title="버튼 (Button)">
+            <div className="flex flex-wrap gap-3">
+              <Button variant="primary">저장</Button>
+              <Button variant="secondary">취소</Button>
+              <Button variant="accent">송금하기</Button>
+              <Button variant="ghost">자세히</Button>
+              <Button variant="primary" disabled>
+                비활성
+              </Button>
             </div>
-          </div>
-        </section>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Button size="sm">sm</Button>
+              <Button size="md">md (기본)</Button>
+              <Button size="lg">lg</Button>
+            </div>
+          </Section>
+
+          <Section title="카드 (Card)">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Card>
+                <p className="text-overline tracking-overline uppercase text-ink-soft">
+                  outlined
+                </p>
+                <p className="font-display mt-1 text-h2">우도교회팀</p>
+                <p className="mt-2 text-body-sm text-ink-soft">
+                  팀원 30명 · 일정 12개
+                </p>
+              </Card>
+              <Card variant="surface">
+                <p className="text-overline tracking-overline uppercase text-ink-soft">
+                  surface
+                </p>
+                <p className="font-display mt-1 text-h2">예산 합계</p>
+                <p className="mt-2 text-body-sm text-ink-soft">
+                  배경 구역용 (paper-deep)
+                </p>
+              </Card>
+              <Card variant="accent">
+                <p className="text-overline tracking-overline uppercase">
+                  accent
+                </p>
+                <p className="font-display mt-1 text-h2">히어로 카드</p>
+                <p className="mt-2 text-body-sm opacity-90">
+                  중요 강조용 (coral 배경)
+                </p>
+              </Card>
+            </div>
+          </Section>
+
+          <Section title="인풋 (Input)">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Input
+                label="이름"
+                placeholder="홍길동"
+                hint="실명을 입력해주세요."
+              />
+              <Input
+                label="이메일"
+                type="email"
+                placeholder="you@example.com"
+                errorText="올바른 이메일 형식이 아니에요."
+              />
+              <Input
+                variant="boxed"
+                label="검색"
+                placeholder="이름 / 이메일로 검색"
+              />
+              <Input label="계좌번호" placeholder="00-000000-00-000" />
+            </div>
+          </Section>
+
+          <Section title="태그 (Tag)">
+            <div className="flex flex-wrap gap-3">
+              <Tag>기본</Tag>
+              <Tag tone="in_progress">진행중</Tag>
+              <Tag tone="done">완료</Tag>
+              <Tag tone="danger">위험</Tag>
+              <Tag tone="info">정보</Tag>
+            </div>
+          </Section>
+
+          <Section title="아바타 (Avatar)">
+            <div className="flex items-end gap-4">
+              <Avatar name="이도연" size="sm" />
+              <Avatar name="이도연" />
+              <Avatar name="이도연" size="lg" />
+              <Avatar name="John Doe" size="lg" />
+              <Avatar name="" size="lg" />
+            </div>
+          </Section>
+        </div>
 
         <footer className="mt-section border-t border-ink/15 pt-6 text-caption text-ink-mute">
-          Phase 0 · 디자인 토큰 검증 화면. 실제 랜딩은 다음 작업에서 작업.
+          Phase 0 · 디자인 토큰 + 프리미티브 검증 화면. 실제 랜딩은 다음
+          작업에서.
         </footer>
       </div>
     </main>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <p className="tracking-overline text-overline uppercase text-ink-soft">
+        {title}
+      </p>
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }
