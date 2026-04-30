@@ -10,6 +10,8 @@ from sqlalchemy import text
 from app.config import get_settings
 from app.db.session import async_session_maker, engine
 from app.domains.auth.router import router as auth_router
+from app.domains.member.router import flat_router as member_flat_router
+from app.domains.member.router import nested_router as member_nested_router
 from app.domains.org.router import router as org_router
 from app.domains.outreach.router import flat_router as outreach_flat_router
 from app.domains.outreach.router import nested_router as outreach_nested_router
@@ -52,6 +54,8 @@ def create_app() -> FastAPI:
     app.include_router(outreach_flat_router, prefix="/api/v1")
     app.include_router(team_nested_router, prefix="/api/v1")
     app.include_router(team_flat_router, prefix="/api/v1")
+    app.include_router(member_nested_router, prefix="/api/v1")
+    app.include_router(member_flat_router, prefix="/api/v1")
 
     @app.get("/healthz", tags=["meta"])
     async def healthz() -> dict[str, str]:

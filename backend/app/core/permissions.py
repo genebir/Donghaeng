@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
 
@@ -5,6 +6,7 @@ from fastapi import Depends, HTTPException, Path, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
+from app.domains.member.models import TeamMember, TeamRole
 from app.domains.org.models import OrgMembership, OrgRole
 from app.domains.outreach.models import Outreach
 from app.domains.team.models import Team
@@ -181,8 +183,23 @@ async def require_team_admin(
     user: CurrentUser,
     team_id: Annotated[UUID, Path()],
 ) -> Team:
-    team, membership = await _resolve_team_membership(db, user, team_id)
-    if membership.role not in (OrgRole.OWNER, OrgRole.ADMIN):
+    """
+    팀 관리 권한 — DATABASE.md '팀 일반 관리: role = LEADER' + 조직 OWNER/ADMIN.
+    """
+    team, org_membership = await _resolve_team_membership(db, user, team_id)
+    if org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
+        return team
+
+    leader = (
+        await db.execute(
+            select(TeamMember).where(
+                TeamMember.team_id == team.id,
+                TeamMember.user_id == user.id,
+                TeamMember.role == TeamRole.LEADER,
+            )
+        )
+    ).scalar_one_or_none()
+    if leader is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="팀 관리 권한이 필요합니다.",
@@ -191,3 +208,115 @@ async def require_team_admin(
 
 
 TeamAdminContext = Annotated[Team, Depends(require_team_admin)]
+
+
+# ===========================================================================
+# TeamMember scope
+# ===========================================================================
+
+async def _resolve_member_access(
+    db: DbSession,
+    user: CurrentUser,
+    member_id: UUID,
+) -> tuple[TeamMember, bool, bool]:
+    """
+    Returns (member, is_self, is_admin).
+    is_admin = 부모 조직의 OWNER/ADMIN 또는 같은 팀의 LEADER.
+    is_self = member.user_id == user.id.
+    둘 다 False 이면 호출자는 ``require_member_admin_or_self``에서 403.
+    """
+    member = (
+        await db.execute(select(TeamMember).where(TeamMember.id == member_id))
+    ).scalar_one_or_none()
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 멤버에 접근할 수 없습니다.",
+        )
+
+    is_self = member.user_id == user.id
+
+    team = (
+        await db.execute(select(Team).where(Team.id == member.team_id))
+    ).scalar_one_or_none()
+    if team is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 멤버에 접근할 수 없습니다.",
+        )
+    outreach = (
+        await db.execute(select(Outreach).where(Outreach.id == team.outreach_id))
+    ).scalar_one_or_none()
+    if outreach is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 멤버에 접근할 수 없습니다.",
+        )
+    org_membership = (
+        await db.execute(
+            select(OrgMembership).where(
+                OrgMembership.organization_id == outreach.organization_id,
+                OrgMembership.user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    is_admin = False
+    if org_membership and org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
+        is_admin = True
+    if not is_admin:
+        leader = (
+            await db.execute(
+                select(TeamMember).where(
+                    TeamMember.team_id == team.id,
+                    TeamMember.user_id == user.id,
+                    TeamMember.role == TeamRole.LEADER,
+                )
+            )
+        ).scalar_one_or_none()
+        if leader is not None:
+            is_admin = True
+
+    if not (is_admin or is_self) and org_membership is None:
+        # 같은 조직 멤버도 아니면 일관 403.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 멤버에 접근할 수 없습니다.",
+        )
+    return member, is_self, is_admin
+
+
+@dataclass
+class MemberAccess:
+    member: TeamMember
+    is_self: bool
+    is_admin: bool
+
+
+async def require_member_access(
+    db: DbSession,
+    user: CurrentUser,
+    member_id: Annotated[UUID, Path()],
+) -> MemberAccess:
+    """
+    Read 접근 — 같은 조직 멤버면 OK. 권한 분기는 라우터에서 is_admin/is_self로.
+    """
+    member, is_self, is_admin = await _resolve_member_access(db, user, member_id)
+    return MemberAccess(member=member, is_self=is_self, is_admin=is_admin)
+
+
+MemberAccessContext = Annotated[MemberAccess, Depends(require_member_access)]
+
+
+async def require_member_admin_or_self(
+    access: MemberAccessContext,
+) -> MemberAccess:
+    if not (access.is_admin or access.is_self):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="본인 또는 팀 관리자만 변경할 수 있습니다.",
+        )
+    return access
+
+
+MemberAdminOrSelfContext = Annotated[MemberAccess, Depends(require_member_admin_or_self)]
