@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+ * 동행 디자인 토큰 (DESIGN.md 기준)
+ * 새 컬러/폰트가 필요하면 DESIGN.md 먼저 갱신, 그 다음 여기.
+ * =========================================================================*/
+
+:root {
+  /* ── 컬러 ───────────────────────────────────────────── */
+  --paper: #f4efe6;
+  --paper-deep: #eae3d4;
+  --ink: #1b1b1b;
+  --ink-soft: #3d3a35;
+  --ink-mute: #7a7468;
+  --midnight: #0a0a0a;
+  --coral: #dc241f;
+  --coral-deep: #a81812;
+  --ocean: #2d4a8a;
+  --ocean-deep: #1f3666;
+  --mustard: #d9a441;
+  --sage: #7a9579;
+  --rust: #a04b2b;
+  --ci-gray: #9a9a9a;
+
+  /* ── 폰트 (next/font/local로 주입되는 변수 페어링) ─── */
+  /*
+    한국어/영문 페어링:
+    Display: Fraunces + Gowun Batang
+    Body:    Inter + Pretendard
+    실제 폰트 파일은 다음 commit에서 next/font/local로 추가.
+    당분간은 system font fallback로 동작하도록 정의만 둠.
+  */
+  --font-display:
+    var(--font-fraunces, "Fraunces"), var(--font-gowun-batang, "Gowun Batang"),
+    "Apple SD Gothic Neo", serif;
+  --font-body:
+    var(--font-inter, "Inter"), var(--font-pretendard, "Pretendard"),
+    "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── 모션 ──────────────────────────────────────────── */
+  --tx-fast: 120ms cubic-bezier(0.2, 0, 0, 1);
+  --tx-base: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --tx-slow: 320ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ===========================================================================
+ * Tailwind v4 @theme — 위 CSS 변수를 Tailwind 유틸리티(bg-paper, text-ink, …)로 노출
+ * =========================================================================*/
+
+@theme inline {
+  /* 컬러 */
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-mute: var(--ink-mute);
+  --color-midnight: var(--midnight);
+  --color-coral: var(--coral);
+  --color-coral-deep: var(--coral-deep);
+  --color-ocean: var(--ocean);
+  --color-ocean-deep: var(--ocean-deep);
+  --color-mustard: var(--mustard);
+  --color-sage: var(--sage);
+  --color-rust: var(--rust);
+  --color-ci-gray: var(--ci-gray);
+
+  /* 폰트 패밀리 */
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* 타이포 스케일 (font-size + line-height) */
+  --text-display-xl: 4.5rem;
+  --text-display-xl--line-height: 1.05;
+  --text-display-lg: 3.25rem;
+  --text-display-lg--line-height: 1.1;
+  --text-display-md: 2.25rem;
+  --text-display-md--line-height: 1.15;
+  --text-h1: 1.875rem;
+  --text-h1--line-height: 1.25;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 1.3;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.35;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.7;
+  --text-body: 1rem;
+  --text-body--line-height: 1.7;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.6;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.5;
+  --text-overline: 0.6875rem;
+  --text-overline--line-height: 1.4;
+
+  /* 컨테이너 폭 */
+  --container-sm: 720px;
+  --container-md: 1080px;
+  --container-lg: 1280px;
+  --container-xl: 1440px;
+
+  /* 섹션 간격 */
+  --spacing-section-sm: 3rem;
+  --spacing-section: 5rem;
+  --spacing-section-lg: 8rem;
+
+  /* 라운딩 — DESIGN.md: 보수적 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+/* ===========================================================================
+ * Base
+ * =========================================================================*/
+
+html {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+body {
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* ===========================================================================
+ * 그레인 텍스처 (DESIGN.md §4)
+ * 작업 화면 (paper) 위에 미세한 노이즈를 깔아 종이 질감.
+ * =========================================================================*/
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("/grain.svg");
+  background-repeat: repeat;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@media print {
+  body::before {
+    display: none;
+  }
+}
+
+/* midnight 페이지(레이어 2)에서 grain을 어둡게 처리 */
+body[data-theme="midnight"]::before {
+  mix-blend-mode: screen;
+  opacity: 0.06;
+}
+
+/* ===========================================================================
+ * Reduced motion
+ * =========================================================================*/
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ===========================================================================
+ * Utilities
+ * =========================================================================*/
+
+.tracking-overline {
+  letter-spacing: 0.12em;
+}
