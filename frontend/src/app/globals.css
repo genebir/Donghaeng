@@ -183,3 +183,9 @@ body[data-theme="midnight"]::before {
 .tracking-overline {
   letter-spacing: 0.12em;
 }
+
+/* DESIGN.md §4: 리소 미스레지스트레이션 — 코럴 글자가 1~2px 어긋난 듯한 효과.
+   화면당 최대 1곳에만 사용 (히어로 등). */
+.display-stamp {
+  text-shadow: 2px 2px 0 var(--coral);
+}
