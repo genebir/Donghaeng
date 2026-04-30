@@ -8,4 +8,5 @@ sees it before Alembic compares against the live schema.
 # suppression so linters don't flag the unused import.
 
 from app.domains.org import models as _org_models  # noqa: F401
+from app.domains.outreach import models as _outreach_models  # noqa: F401
 from app.domains.user import models as _user_models  # noqa: F401
