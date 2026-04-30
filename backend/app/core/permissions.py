@@ -6,9 +6,11 @@ from fastapi import Depends, HTTPException, Path, status
 from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
+from app.domains.checklist.models import ChecklistItem
 from app.domains.member.models import TeamMember, TeamRole
 from app.domains.org.models import OrgMembership, OrgRole
 from app.domains.outreach.models import Outreach
+from app.domains.schedule.models import ScheduleItem
 from app.domains.team.models import Team
 
 
@@ -178,28 +180,34 @@ async def require_team_member(
 TeamContext = Annotated[Team, Depends(require_team_member)]
 
 
+async def _check_team_admin(
+    db: DbSession,
+    user_id: UUID,
+    team: Team,
+    org_membership: OrgMembership,
+) -> bool:
+    """DATABASE.md '팀 일반 관리: role = LEADER' + 조직 OWNER/ADMIN."""
+    if org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
+        return True
+    leader = (
+        await db.execute(
+            select(TeamMember).where(
+                TeamMember.team_id == team.id,
+                TeamMember.user_id == user_id,
+                TeamMember.role == TeamRole.LEADER,
+            )
+        )
+    ).scalar_one_or_none()
+    return leader is not None
+
+
 async def require_team_admin(
     db: DbSession,
     user: CurrentUser,
     team_id: Annotated[UUID, Path()],
 ) -> Team:
-    """
-    팀 관리 권한 — DATABASE.md '팀 일반 관리: role = LEADER' + 조직 OWNER/ADMIN.
-    """
     team, org_membership = await _resolve_team_membership(db, user, team_id)
-    if org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
-        return team
-
-    leader = (
-        await db.execute(
-            select(TeamMember).where(
-                TeamMember.team_id == team.id,
-                TeamMember.user_id == user.id,
-                TeamMember.role == TeamRole.LEADER,
-            )
-        )
-    ).scalar_one_or_none()
-    if leader is None:
+    if not await _check_team_admin(db, user.id, team, org_membership):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="팀 관리 권한이 필요합니다.",
@@ -320,3 +328,65 @@ async def require_member_admin_or_self(
 
 
 MemberAdminOrSelfContext = Annotated[MemberAccess, Depends(require_member_admin_or_self)]
+
+
+# ===========================================================================
+# Schedule / Checklist item scope
+# ===========================================================================
+# 둘 다 team_id를 가지므로 동일한 패턴 — 아이템 → 팀 → 조직 멤버십 walk.
+# read는 team-level 라우터에서 TeamContext로 처리. 이쪽은 admin 전용.
+
+async def require_schedule_item_admin(
+    db: DbSession,
+    user: CurrentUser,
+    item_id: Annotated[UUID, Path()],
+) -> ScheduleItem:
+    item = (
+        await db.execute(select(ScheduleItem).where(ScheduleItem.id == item_id))
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 일정에 접근할 수 없습니다.",
+        )
+    team, org_membership = await _resolve_team_membership(db, user, item.team_id)
+    if not await _check_team_admin(db, user.id, team, org_membership):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="팀 관리 권한이 필요합니다.",
+        )
+    return item
+
+
+ScheduleItemAdminContext = Annotated[
+    ScheduleItem, Depends(require_schedule_item_admin)
+]
+
+
+async def require_checklist_item_admin(
+    db: DbSession,
+    user: CurrentUser,
+    item_id: Annotated[UUID, Path()],
+) -> ChecklistItem:
+    item = (
+        await db.execute(
+            select(ChecklistItem).where(ChecklistItem.id == item_id)
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 준비물에 접근할 수 없습니다.",
+        )
+    team, org_membership = await _resolve_team_membership(db, user, item.team_id)
+    if not await _check_team_admin(db, user.id, team, org_membership):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="팀 관리 권한이 필요합니다.",
+        )
+    return item
+
+
+ChecklistItemAdminContext = Annotated[
+    ChecklistItem, Depends(require_checklist_item_admin)
+]
