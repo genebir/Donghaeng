@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.deps import CurrentUser, DbSession
 from app.domains.checklist.models import ChecklistItem
+from app.domains.expense.models import Expense
 from app.domains.member.models import TeamMember, TeamRole
 from app.domains.org.models import OrgMembership, OrgRole
 from app.domains.outreach.models import Outreach
@@ -218,6 +219,27 @@ async def require_team_admin(
 TeamAdminContext = Annotated[Team, Depends(require_team_admin)]
 
 
+@dataclass
+class TeamAccess:
+    team: Team
+    user_id: UUID
+    is_admin: bool
+
+
+async def require_team_access(
+    db: DbSession,
+    user: CurrentUser,
+    team_id: Annotated[UUID, Path()],
+) -> TeamAccess:
+    """팀 멤버 + admin 여부를 함께 노출 — 라우터에서 분기용 (예: 회계)."""
+    team, org_membership = await _resolve_team_membership(db, user, team_id)
+    is_admin = await _check_team_admin(db, user.id, team, org_membership)
+    return TeamAccess(team=team, user_id=user.id, is_admin=is_admin)
+
+
+TeamAccessContext = Annotated[TeamAccess, Depends(require_team_access)]
+
+
 # ===========================================================================
 # TeamMember scope
 # ===========================================================================
@@ -390,3 +412,57 @@ async def require_checklist_item_admin(
 ChecklistItemAdminContext = Annotated[
     ChecklistItem, Depends(require_checklist_item_admin)
 ]
+
+
+# ===========================================================================
+# Expense scope
+# ===========================================================================
+# expense는 본인(=purchaser) 또는 admin이 접근 가능. read/write 분기는 라우터에서.
+
+@dataclass
+class ExpenseAccess:
+    expense: Expense
+    user_id: UUID
+    is_self: bool
+    is_admin: bool
+
+
+async def require_expense_access(
+    db: DbSession,
+    user: CurrentUser,
+    expense_id: Annotated[UUID, Path()],
+) -> ExpenseAccess:
+    expense = (
+        await db.execute(select(Expense).where(Expense.id == expense_id))
+    ).scalar_one_or_none()
+    if expense is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 지출에 접근할 수 없습니다.",
+        )
+    team, org_membership = await _resolve_team_membership(db, user, expense.team_id)
+    is_admin = await _check_team_admin(db, user.id, team, org_membership)
+    is_self = expense.purchaser_user_id == user.id
+    if not (is_admin or is_self):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 지출에 접근할 수 없습니다.",
+        )
+    return ExpenseAccess(
+        expense=expense, user_id=user.id, is_self=is_self, is_admin=is_admin
+    )
+
+
+ExpenseAccessContext = Annotated[ExpenseAccess, Depends(require_expense_access)]
+
+
+async def require_expense_admin(access: ExpenseAccessContext) -> ExpenseAccess:
+    if not access.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="회계 관리 권한이 필요합니다.",
+        )
+    return access
+
+
+ExpenseAdminContext = Annotated[ExpenseAccess, Depends(require_expense_admin)]
