@@ -7,29 +7,35 @@
 
 ## 새 PC 부트스트랩 (그대로 이어가기)
 
+스크립트 3개로 끝. **멱등** (여러 번 돌려도 안전).
+
 ```bash
 git clone git@github.com:genebir/Donghaeng.git
 cd Donghaeng
 
-# 1. 환경변수 — 필요한 키만 채우면 됨 (OAuth/R2/OCR은 Phase별로 천천히)
-cp .env.example backend/.env
-cp .env.example frontend/.env.local
-# 최소 필수: JWT_SECRET, BANK_INFO_ENCRYPTION_KEY (Fernet 32-byte b64), NEXTAUTH_SECRET
-
-# 2. 인프라 (postgres :5433, minio :9000/9001)
-docker compose up -d
-
-# 3. 백엔드
-cd backend && uv sync && uv run alembic upgrade head
-uv run uvicorn app.main:app --reload   # http://localhost:8000
-
-# 4. 프론트엔드 (다른 터미널)
-cd frontend && pnpm install && pnpm dev   # http://localhost:3000
+./scripts/setup.sh    # env 파일 + 시크릿 생성 + docker up + uv sync + alembic upgrade + pnpm install
+./scripts/start.sh    # backend(8000) + frontend(3000) 백그라운드 기동, 로그는 tmp/*.log
+./scripts/stop.sh     # 중지. --all 추가 시 docker 인프라까지 중지
 ```
 
-> docker-compose는 host의 5432가 다른 postgres에게 점유당해 있어 **5433:5432**로 매핑됨
-> (자세한 사정은 `docker-compose.yml` 주석). 새 PC에서 5432가 비어있다면 그대로 둬도
-> 문제 없음 — `DATABASE_URL`만 일치시키면 됨.
+지원 환경: macOS / Linux / WSL2 / Git Bash on Windows.
+사전 도구가 없으면 `setup.sh` 가 친절히 안내한다 (`git/docker/uv/pnpm/openssl`).
+
+포트 충돌 시 환경변수 override:
+```bash
+BACKEND_PORT=8001 FRONTEND_PORT=3001 ./scripts/start.sh
+```
+
+> docker-compose는 host의 5432가 다른 postgres에게 점유당한 PC를 가정해 **5433:5432**로
+> 매핑됨 (`docker-compose.yml` 주석 참조). 5432가 비어있는 PC에서도 그대로 동작 —
+> `DATABASE_URL` 만 일치시키면 됨 (기본값이 5433이라 그대로 두면 됨).
+
+수동 명령(스크립트 안 쓰고 직접 띄우기):
+```bash
+docker compose up -d
+( cd backend  && uv sync && uv run alembic upgrade head && uv run uvicorn app.main:app --reload )
+( cd frontend && pnpm install && pnpm dev )
+```
 
 ---
 
@@ -119,3 +125,14 @@ cd frontend && pnpm install && pnpm dev   # http://localhost:3000
 3. `app/main.py`에 라우터 import + `app.include_router(... prefix="/api/v1")`
 4. alembic 마이그레이션 생성 + revision id 정리
 5. 권한이 다른 도메인을 walk하면 `app/core/permissions.py`에 dep 추가
+
+새 환경변수 추가 시:
+1. `.env.example` 에 키 + 기본값(또는 빈 값) 추가
+2. backend면 `backend/app/config.py` 의 `Settings` 에 필드 추가
+3. **자동 생성이 필요한 시크릿**이면 `scripts/setup.sh` 의 `fill_secret_if_blank` 호출 추가
+4. 사용자에게 영향 — `setup.sh` 재실행 시 "missing keys" 경고로 자동 안내됨
+
+새 docker 서비스 추가 시:
+1. `docker-compose.yml` 에 서비스 + healthcheck
+2. `scripts/setup.sh`, `scripts/start.sh` 의 healthy 대기 루프에 추가 (필요 시)
+3. 컨테이너 이름은 `donghaeng-*` 컨벤션 유지 (스크립트가 docker inspect 로 찾음)

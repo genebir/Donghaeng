@@ -8,24 +8,24 @@
 
 ## 빠른 시작 (로컬 개발)
 
+세 개의 스크립트로 끝. **멱등** — 재실행 안전.
+
 ```bash
-# 1. 인프라 (Postgres + MinIO)
-docker compose up -d
-
-# 2. 환경변수
-cp .env.example .env  # 그리고 backend/, frontend/ 각자 필요한 키 설정
-
-# 3. Backend
-cd backend
-uv sync
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload  # http://localhost:8000
-
-# 4. Frontend (Phase 0 후반)
-cd frontend
-pnpm install
-pnpm dev  # http://localhost:3000
+./scripts/setup.sh   # 1회 (또는 .env.example/스키마 변경 후 재실행)
+./scripts/start.sh   # 매번. 이미 떠 있으면 skip
+./scripts/stop.sh    # 종료. (--all 붙이면 docker 인프라까지 중지)
 ```
+
+지원 환경: macOS / Linux / WSL2 / Git Bash on Windows.
+사전 도구: `git`, `docker`(+compose), `uv`, `pnpm`, `openssl` — `setup.sh`가 없는 항목을 안내.
+
+포트 충돌 시 환경변수로 override:
+
+```bash
+BACKEND_PORT=8001 FRONTEND_PORT=3001 ./scripts/start.sh
+```
+
+수동으로 띄우고 싶다면 [`docs/STATUS.md`](./docs/STATUS.md) 의 명령 풀 셋 참조.
 
 ---
 
