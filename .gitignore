@@ -44,3 +44,6 @@ tmp/
 
 # uploads (local minio data)
 .minio-data/
+
+# 임시/원본 브랜드 자산 (가공본만 docs/에 커밋)
+docs/CI_JPG.jpg
