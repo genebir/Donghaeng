@@ -4,17 +4,17 @@ import { fetchApi, ApiError } from "@/lib/api";
 import type { OrgPublic, OutreachWithTeams, TeamPublic } from "@/types/api";
 
 const STATUS_LABEL: Record<string, string> = {
-  PLANNING: "기획 중",
-  ACTIVE: "진행 중",
-  COMPLETED: "완료",
-  CANCELLED: "취소",
+  planning: "기획 중",
+  ongoing: "진행 중",
+  finished: "완료",
+  archived: "보관",
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  PLANNING: "bg-mustard/15 text-mustard",
-  ACTIVE: "bg-sage/15 text-sage",
-  COMPLETED: "bg-ink-mute/15 text-ink-mute",
-  CANCELLED: "bg-rust/15 text-rust",
+  planning: "bg-mustard/15 text-mustard",
+  ongoing: "bg-sage/15 text-sage",
+  finished: "bg-ink-mute/15 text-ink-mute",
+  archived: "bg-ink-mute/10 text-ink-mute",
 };
 
 function formatDateRange(

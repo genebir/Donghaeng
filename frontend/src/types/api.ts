@@ -18,7 +18,7 @@ export interface OutreachPublic {
   created_at: string;
 }
 
-export type TeamStatus = "PLANNING" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+export type TeamStatus = "planning" | "ongoing" | "finished" | "archived";
 
 export interface TeamPublic {
   id: string;
