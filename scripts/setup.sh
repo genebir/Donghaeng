@@ -15,6 +15,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+echo $ROOT
 cd "$ROOT"
 
 c_info=$'\033[1;36m'
