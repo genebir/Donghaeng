@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
@@ -14,10 +15,28 @@ type NotificationKind =
 interface Notification {
   id: string;
   kind: NotificationKind;
+  team_id: string;
+  ref_id: string | null;
   title: string;
   body: string | null;
   is_read: boolean;
   created_at: string;
+}
+
+function notificationHref(n: Notification): string | null {
+  const base = `/teams/${n.team_id}`;
+  switch (n.kind) {
+    case "expense_approved":
+    case "expense_rejected":
+      return n.ref_id ? `${base}/expenses/${n.ref_id}` : null;
+    case "reimbursement_confirmed":
+    case "reimbursement_completed":
+      return n.ref_id ? `${base}/reimbursements/${n.ref_id}` : null;
+    case "testimony_new":
+      return `${base}/testimonies`;
+    default:
+      return null;
+  }
 }
 
 const KIND_ICON: Record<NotificationKind, string> = {
@@ -110,6 +129,18 @@ export function NotificationBell() {
     } catch { /* silent */ }
   };
 
+  const markOneRead = useCallback(async (id: string) => {
+    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
+    setCount((c) => Math.max(0, c - 1));
+    try {
+      await fetch("/api/notifications/mark-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+    } catch { /* silent */ }
+  }, []);
+
   return (
     <div className="relative" ref={panelRef}>
       {/* 종 버튼 */}
@@ -157,28 +188,44 @@ export function NotificationBell() {
               </div>
             ) : (
               <ul>
-                {notifications.map((n) => (
-                  <li
-                    key={n.id}
-                    className={`flex items-start gap-3 px-4 py-3 border-b border-ink/5 last:border-0 ${!n.is_read ? "bg-paper-deep/60" : ""}`}
-                  >
-                    <span className={`mt-0.5 flex-shrink-0 text-body-sm font-bold ${KIND_COLOR[n.kind]}`}>
-                      {KIND_ICON[n.kind]}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-body-sm leading-snug ${!n.is_read ? "font-medium text-ink" : "text-ink-soft"}`}>
-                        {n.title}
-                      </p>
-                      {n.body && (
-                        <p className="mt-0.5 text-caption text-ink-mute truncate">{n.body}</p>
+                {notifications.map((n) => {
+                  const href = notificationHref(n);
+                  const inner = (
+                    <>
+                      <span className={`mt-0.5 flex-shrink-0 text-body-sm font-bold ${KIND_COLOR[n.kind]}`}>
+                        {KIND_ICON[n.kind]}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-body-sm leading-snug ${!n.is_read ? "font-medium text-ink" : "text-ink-soft"}`}>
+                          {n.title}
+                        </p>
+                        {n.body && (
+                          <p className="mt-0.5 text-caption text-ink-mute truncate">{n.body}</p>
+                        )}
+                        <p className="mt-1 text-caption text-ink-mute">{formatRelative(n.created_at)}</p>
+                      </div>
+                      {!n.is_read && (
+                        <span className="mt-1.5 flex-shrink-0 h-1.5 w-1.5 rounded-full bg-coral" />
                       )}
-                      <p className="mt-1 text-caption text-ink-mute">{formatRelative(n.created_at)}</p>
-                    </div>
-                    {!n.is_read && (
-                      <span className="mt-1.5 flex-shrink-0 h-1.5 w-1.5 rounded-full bg-coral" />
-                    )}
-                  </li>
-                ))}
+                    </>
+                  );
+                  const baseClass = `flex items-start gap-3 px-4 py-3 border-b border-ink/5 last:border-0 transition-colors ${!n.is_read ? "bg-paper-deep/60" : ""}`;
+                  return (
+                    <li key={n.id}>
+                      {href ? (
+                        <Link
+                          href={href}
+                          onClick={() => { if (!n.is_read) markOneRead(n.id); setOpen(false); }}
+                          className={`${baseClass} hover:bg-paper-deep`}
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div className={baseClass}>{inner}</div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
