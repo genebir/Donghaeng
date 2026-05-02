@@ -14,9 +14,27 @@ const CATEGORY_ORDER: ChecklistCategory[] = ["DOCS", "TEAM_GEAR", "PERSONAL", "M
 const STATUS_NEXT: Record<ChecklistStatus, ChecklistStatus> = {
   todo: "in_progress", in_progress: "done", done: "todo",
 };
-const STATUS_DOT: Record<ChecklistStatus, string> = {
-  todo: "bg-ink-mute", in_progress: "bg-mustard", done: "bg-sage",
-};
+function StatusIcon({ status }: { status: ChecklistStatus }) {
+  if (status === "done") {
+    return (
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sage text-paper transition-colors">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M2 5.5l2.5 2.5L9 3" />
+        </svg>
+      </span>
+    );
+  }
+  if (status === "in_progress") {
+    return (
+      <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-mustard bg-mustard/15 transition-colors">
+        <span className="h-1.5 w-1.5 rounded-full bg-mustard" />
+      </span>
+    );
+  }
+  return (
+    <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-ink/25 bg-paper transition-colors hover:border-ink/40" />
+  );
+}
 const STATUS_LABEL: Record<ChecklistStatus, string> = {
   todo: "미완료", in_progress: "진행 중", done: "완료",
 };
@@ -133,7 +151,7 @@ function ChecklistRow({
         title={`${STATUS_LABEL[next]}으로 변경`}
         className="mt-0.5 flex-shrink-0 focus-visible:outline-2 focus-visible:outline-coral focus-visible:outline-offset-2 rounded-full"
       >
-        <span className={`block h-3 w-3 rounded-full transition-colors ${STATUS_DOT[item.status]}`} />
+        <StatusIcon status={item.status} />
       </button>
 
       <div className="min-w-0 flex-1">
@@ -146,9 +164,9 @@ function ChecklistRow({
           )}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-ink-mute">
-          <span className={`rounded px-1.5 py-0.5 text-caption ${item.status === "done" ? "bg-sage/15 text-sage" : item.status === "in_progress" ? "bg-mustard/15 text-mustard" : "bg-ink-mute/10 text-ink-mute"}`}>
-            {STATUS_LABEL[item.status]}
-          </span>
+          {item.status === "in_progress" && (
+            <span className="rounded px-1.5 py-0.5 text-caption bg-mustard/15 text-mustard">진행 중</span>
+          )}
           {item.due_date && <span>마감 {item.due_date}</span>}
           {item.cost_amount && (
             <span>

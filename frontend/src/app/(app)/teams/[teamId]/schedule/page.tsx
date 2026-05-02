@@ -498,32 +498,42 @@ export default function SchedulePage() {
         <div className="flex flex-col gap-10">
           {upcomingGroups.length > 0 && (
             <div className="flex flex-col gap-8">
-              {upcomingGroups.map(({ key, dateLabel, items: dayItems }) => (
-                <section key={key}>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="font-medium text-ink">{dateLabel}</h2>
-                    {isAdmin && (
-                      <button
-                        onClick={() => setAddModal({ open: true, defaultDate: key })}
-                        className="text-caption text-ink-mute hover:text-coral transition-colors"
-                      >
-                        + 추가
-                      </button>
-                    )}
-                  </div>
-                  <ul className="flex flex-col gap-2">
-                    {dayItems.map((item) => (
-                      <ScheduleRow
-                        key={item.id}
-                        item={item}
-                        isAdmin={isAdmin}
-                        onEdit={setEditItem}
-                        onDelete={handleDelete}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
+              {upcomingGroups.map(({ key, dateLabel, items: dayItems }) => {
+                const isToday = key === today;
+                return (
+                  <section key={key}>
+                    <div className={`mb-3 flex items-center justify-between ${isToday ? "sticky top-0 z-10 -mx-1 rounded-md bg-paper px-1 py-1 shadow-sm" : ""}`}>
+                      <div className="flex items-center gap-2">
+                        {isToday && (
+                          <span className="rounded-full bg-coral px-2 py-0.5 text-caption font-semibold text-paper">오늘</span>
+                        )}
+                        <h2 className={`font-medium ${isToday ? "text-ink" : "text-ink-soft"}`}>
+                          {isToday ? new Date(key).toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "short" }) : dateLabel}
+                        </h2>
+                      </div>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setAddModal({ open: true, defaultDate: key })}
+                          className="text-caption text-ink-mute hover:text-coral transition-colors"
+                        >
+                          + 추가
+                        </button>
+                      )}
+                    </div>
+                    <ul className="flex flex-col gap-2">
+                      {dayItems.map((item) => (
+                        <ScheduleRow
+                          key={item.id}
+                          item={item}
+                          isAdmin={isAdmin}
+                          onEdit={setEditItem}
+                          onDelete={handleDelete}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
             </div>
           )}
 
