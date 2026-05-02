@@ -34,12 +34,23 @@ function formatDateTime(iso: string) {
 
 // ── 완료 모달 ─────────────────────────────────────────────────────────────────
 
-function CompleteModal({ onClose, onConfirm, busy }: {
+const TRANSFER_METHODS = [
+  { value: "카카오페이", label: "카카오페이" },
+  { value: "토스", label: "토스" },
+  { value: "계좌이체", label: "계좌이체" },
+  { value: "현금", label: "현금" },
+];
+
+function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
   onClose: () => void;
   onConfirm: (method: string, reference: string, notes: string) => void;
   busy: boolean;
+  recipientBankName?: string | null;
 }) {
-  const [method, setMethod] = useState("BANK_TRANSFER");
+  const defaultMethod = recipientBankName?.includes("카카오") ? "카카오페이"
+    : recipientBankName?.includes("토스") ? "토스"
+    : "계좌이체";
+  const [method, setMethod] = useState(defaultMethod);
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -47,21 +58,33 @@ function CompleteModal({ onClose, onConfirm, busy }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4">
       <div className="w-full max-w-md rounded-md border border-ink/15 bg-paper p-6">
         <h3 className="mb-4 text-h3">송금 완료 처리</h3>
-        <div className="space-y-4">
-          <label className="block">
+        <div className="space-y-5">
+          <div>
             <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">송금 방법</span>
-            <input value={method} onChange={(e) => setMethod(e.target.value)}
-              className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body focus:border-ink focus:outline-none"
-              placeholder="BANK_TRANSFER" />
-          </label>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {TRANSFER_METHODS.map((m) => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => setMethod(m.value)}
+                  className={`rounded-lg py-2.5 text-body-sm font-medium transition-colors ${
+                    method === m.value ? "bg-ink text-paper" : "bg-paper-deep text-ink-soft hover:bg-ink/10"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <label className="block">
             <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">송금 확인 메모 *</span>
             <input value={reference} onChange={(e) => setReference(e.target.value)}
+              autoFocus
               className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body focus:border-ink focus:outline-none"
-              placeholder="2026-07-30 14:23 카카오뱅크 이체완료" />
+              placeholder="예: 7/30 14:23 이체완료" />
           </label>
           <label className="block">
-            <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">메모 (선택)</span>
+            <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">메모 <span className="font-normal normal-case text-ink-mute">(선택)</span></span>
             <input value={notes} onChange={(e) => setNotes(e.target.value)}
               className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body focus:border-ink focus:outline-none"
               placeholder="추가 메모" />
@@ -198,6 +221,7 @@ export default function ReimbursementDetailPage() {
           onClose={() => setShowCompleteModal(false)}
           onConfirm={handleComplete}
           busy={busy}
+          recipientBankName={data?.recipient_bank_name}
         />
       )}
 

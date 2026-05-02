@@ -311,14 +311,22 @@ export default function ProfileSettingsPage() {
               <div>
                 <label htmlFor="bank_name">
                   <FieldLabel>은행명</FieldLabel>
-                  <UnderlineInput
-                    id="bank_name"
-                    name="bank_name"
-                    value={form.bank_name}
-                    placeholder="카카오뱅크"
-                    onChange={handleChange}
-                  />
                 </label>
+                <input
+                  id="bank_name"
+                  name="bank_name"
+                  type="text"
+                  list="bank-list"
+                  value={form.bank_name}
+                  placeholder="카카오뱅크"
+                  onChange={handleChange}
+                  className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
+                />
+                <datalist id="bank-list">
+                  {["카카오뱅크","토스뱅크","케이뱅크","KB국민은행","신한은행","우리은행","하나은행","NH농협은행","IBK기업은행","SC제일은행","씨티은행","대구은행","부산은행","광주은행","전북은행","경남은행","우체국","새마을금고","신협"].map((b) => (
+                    <option key={b} value={b} />
+                  ))}
+                </datalist>
               </div>
 
               <div>

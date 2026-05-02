@@ -52,7 +52,7 @@ export default function TeamSettingsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   // 팀 기본 설정
-  const [teamForm, setTeamForm] = useState({ name: "", status: "planning", description: "" });
+  const [teamForm, setTeamForm] = useState({ name: "", status: "planning", description: "", starts_on: "", ends_on: "" });
   const [teamSaving, setTeamSaving] = useState(false);
 
   // 방문지 설정
@@ -80,6 +80,8 @@ export default function TeamSettingsPage() {
           name: t.name,
           status: t.status,
           description: t.description ?? "",
+          starts_on: t.starts_on ? t.starts_on.slice(0, 10) : "",
+          ends_on: t.ends_on ? t.ends_on.slice(0, 10) : "",
         });
         if (t.destination) {
           setDestForm({
@@ -112,6 +114,8 @@ export default function TeamSettingsPage() {
           name: teamForm.name.trim(),
           status: teamForm.status,
           description: teamForm.description.trim() || null,
+          starts_on: teamForm.starts_on || null,
+          ends_on: teamForm.ends_on || null,
         }),
       });
       const json = await res.json();
@@ -198,6 +202,24 @@ export default function TeamSettingsPage() {
               ))}
             </select>
           </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="출발일">
+              <input
+                type="date"
+                value={teamForm.starts_on}
+                onChange={(e) => setTeamForm((f) => ({ ...f, starts_on: e.target.value }))}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="귀국일">
+              <input
+                type="date"
+                value={teamForm.ends_on}
+                onChange={(e) => setTeamForm((f) => ({ ...f, ends_on: e.target.value }))}
+                className={inputClass}
+              />
+            </Field>
+          </div>
           <Field label="팀 소개" optional>
             <textarea
               value={teamForm.description}
