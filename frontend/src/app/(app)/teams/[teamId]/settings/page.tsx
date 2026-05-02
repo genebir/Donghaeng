@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+const APP_URL =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
 interface Destination {
   church_name: string;
   address: string | null;
@@ -62,6 +67,12 @@ export default function TeamSettingsPage() {
   });
   const [destSaving, setDestSaving] = useState(false);
 
+  // 초대 링크
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(true);
+  const [inviteWorking, setInviteWorking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3000);
@@ -102,6 +113,50 @@ export default function TeamSettingsPage() {
     };
     load();
   }, [teamId, showToast]);
+
+  useEffect(() => {
+    fetch(`/api/teams/${teamId}/invite-token`)
+      .then((r) => r.json())
+      .then((json) => { if (json.data?.token) setInviteToken(json.data.token); })
+      .catch(() => {})
+      .finally(() => setInviteLoading(false));
+  }, [teamId]);
+
+  async function handleGenerateInvite() {
+    setInviteWorking(true);
+    try {
+      const res = await fetch(`/api/teams/${teamId}/invite-token`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) return showToast(json.message ?? "초대 링크 생성 실패", false);
+      setInviteToken(json.data.token);
+      showToast("초대 링크가 생성됐어요.", true);
+    } catch {
+      showToast("오류가 발생했어요.", false);
+    } finally {
+      setInviteWorking(false);
+    }
+  }
+
+  async function handleRevokeInvite() {
+    setInviteWorking(true);
+    try {
+      await fetch(`/api/teams/${teamId}/invite-token`, { method: "DELETE" });
+      setInviteToken(null);
+      showToast("초대 링크를 비활성화했어요.", true);
+    } catch {
+      showToast("오류가 발생했어요.", false);
+    } finally {
+      setInviteWorking(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!inviteToken) return;
+    const url = `${APP_URL}/join/${inviteToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleSaveTeam(e: React.FormEvent) {
     e.preventDefault();
@@ -332,6 +387,58 @@ export default function TeamSettingsPage() {
             </button>
           </div>
         </form>
+      </section>
+
+      {/* 초대 링크 */}
+      <section className="border-t border-ink/10 pt-10 mt-10">
+        <div className="mb-5">
+          <h2 className="text-h3 font-medium">초대 링크</h2>
+          <p className="mt-1 text-body-sm text-ink-mute">
+            링크를 공유하면 누구나 이 팀에 참여할 수 있어요.
+          </p>
+        </div>
+
+        {inviteLoading ? (
+          <div className="h-12 rounded-md bg-paper-deep animate-pulse" />
+        ) : inviteToken ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-ink/15 bg-paper-deep px-4 py-3">
+              <span className="flex-1 truncate font-mono text-body-sm text-ink-soft">
+                {`${APP_URL}/join/${inviteToken}`}
+              </span>
+              <button
+                onClick={handleCopy}
+                className="flex-shrink-0 rounded-md border border-ink/15 bg-paper px-3 py-1.5 text-caption font-medium text-ink hover:border-ink/30 transition-colors"
+              >
+                {copied ? "복사됨!" : "복사"}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleGenerateInvite}
+                disabled={inviteWorking}
+                className="h-9 rounded-md border border-ink/20 px-4 text-body-sm text-ink-mute hover:border-ink/40 hover:text-ink disabled:opacity-50 transition-colors"
+              >
+                링크 재생성
+              </button>
+              <button
+                onClick={handleRevokeInvite}
+                disabled={inviteWorking}
+                className="h-9 rounded-md border border-rust/20 px-4 text-body-sm text-rust/70 hover:border-rust/40 hover:text-rust disabled:opacity-50 transition-colors"
+              >
+                비활성화
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleGenerateInvite}
+            disabled={inviteWorking}
+            className="h-10 rounded-md bg-ink px-6 text-body-sm font-medium text-paper hover:opacity-80 disabled:opacity-50"
+          >
+            {inviteWorking ? "생성 중…" : "초대 링크 생성"}
+          </button>
+        )}
       </section>
     </div>
   );

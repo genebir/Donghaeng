@@ -48,6 +48,23 @@ class Team(Base, UUIDMixin, TimestampMixin):
     )
 
 
+class TeamInviteToken(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "team_invite_token"
+
+    team_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("team.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_by_user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+
 class Destination(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "destination"
     # 팀당 1곳 (1:1).

@@ -29,6 +29,7 @@ from app.domains.outreach.router import nested_router as outreach_nested_router
 from app.domains.schedule.router import flat_router as schedule_flat_router
 from app.domains.schedule.router import nested_router as schedule_nested_router
 from app.domains.team.router import flat_router as team_flat_router
+from app.domains.team.router import invite_router as team_invite_router
 from app.domains.team.router import nested_router as team_nested_router
 from app.domains.testimony.router import flat_router as testimony_flat_router
 from app.domains.testimony.router import nested_router as testimony_nested_router
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(outreach_flat_router, prefix="/api/v1")
     app.include_router(team_nested_router, prefix="/api/v1")
     app.include_router(team_flat_router, prefix="/api/v1")
+    app.include_router(team_invite_router, prefix="/api/v1")
     app.include_router(member_nested_router, prefix="/api/v1")
     app.include_router(member_flat_router, prefix="/api/v1")
     app.include_router(schedule_nested_router, prefix="/api/v1")

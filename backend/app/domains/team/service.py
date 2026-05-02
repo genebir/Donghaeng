@@ -1,3 +1,4 @@
+import secrets
 from collections.abc import Sequence
 from uuid import UUID
 
@@ -5,7 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.team.models import Destination, Team
+from app.domains.team.models import Destination, Team, TeamInviteToken
 from app.domains.team.schemas import (
     DestinationUpsert,
     TeamCreate,
@@ -81,6 +82,74 @@ async def get_destination(
     return (
         await db.execute(select(Destination).where(Destination.team_id == team_id))
     ).scalar_one_or_none()
+
+
+async def generate_invite_token(
+    db: AsyncSession, team_id: UUID, user_id: UUID
+) -> TeamInviteToken:
+    existing = (
+        await db.execute(
+            select(TeamInviteToken).where(TeamInviteToken.team_id == team_id)
+        )
+    ).scalar_one_or_none()
+    token_str = secrets.token_urlsafe(24)
+    if existing:
+        existing.token = token_str
+        existing.created_by_user_id = user_id
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+    invite = TeamInviteToken(
+        team_id=team_id, token=token_str, created_by_user_id=user_id
+    )
+    db.add(invite)
+    await db.commit()
+    await db.refresh(invite)
+    return invite
+
+
+async def get_invite_token_for_team(
+    db: AsyncSession, team_id: UUID
+) -> TeamInviteToken | None:
+    return (
+        await db.execute(
+            select(TeamInviteToken).where(TeamInviteToken.team_id == team_id)
+        )
+    ).scalar_one_or_none()
+
+
+async def revoke_invite_token(db: AsyncSession, team_id: UUID) -> None:
+    invite = await get_invite_token_for_team(db, team_id)
+    if invite:
+        await db.delete(invite)
+        await db.commit()
+
+
+async def get_info_by_invite_token(
+    db: AsyncSession, token: str
+) -> tuple[Team, "object"]:
+    from app.domains.outreach.models import Outreach  # avoid circular import
+
+    invite = (
+        await db.execute(
+            select(TeamInviteToken).where(TeamInviteToken.token == token)
+        )
+    ).scalar_one_or_none()
+    if invite is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="유효하지 않은 초대 링크입니다.",
+        )
+    team = await get_team(db, invite.team_id)
+    outreach = (
+        await db.execute(select(Outreach).where(Outreach.id == team.outreach_id))
+    ).scalar_one_or_none()
+    if outreach is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="팀 정보를 찾을 수 없습니다.",
+        )
+    return team, outreach
 
 
 async def upsert_destination(

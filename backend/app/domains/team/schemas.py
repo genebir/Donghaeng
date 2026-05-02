@@ -91,3 +91,23 @@ class TeamDetail(TeamPublic):
     """GET /teams/{id} 응답 — destination 임베드. member_count 등은 추후."""
 
     destination: DestinationPublic | None = None
+
+
+class InviteTokenPublic(BaseModel):
+    token: str
+    team_id: UUID
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InviteInfo(BaseModel):
+    """GET /invite/{token} 공개 응답."""
+
+    token: str
+    team_id: UUID
+    team_name: str
+    outreach_name: str
+    starts_on: date | None = None
+    ends_on: date | None = None
+    description: str | None = None
