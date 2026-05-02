@@ -245,6 +245,50 @@ async def reopen(
     return reimbursement
 
 
+async def get_my_summary(
+    db: AsyncSession,
+    team_id: UUID,
+    user_id: UUID,
+) -> dict:
+    """Return the current user's pending amount + their reimbursement list."""
+    pending_expenses = list(
+        (
+            await db.execute(
+                select(Expense).where(
+                    Expense.team_id == team_id,
+                    Expense.purchaser_user_id == user_id,
+                    Expense.status == ExpenseStatus.APPROVED,
+                    Expense.reimbursement_id.is_(None),
+                )
+            )
+        ).scalars()
+    )
+
+    reimbursements = list(
+        (
+            await db.execute(
+                select(Reimbursement)
+                .where(
+                    Reimbursement.team_id == team_id,
+                    Reimbursement.recipient_user_id == user_id,
+                )
+                .order_by(Reimbursement.created_at.desc())
+            )
+        ).scalars()
+    )
+
+    pending_amount = sum(e.amount for e in pending_expenses)
+
+    return {
+        "pending_amount": str(pending_amount),
+        "pending_expense_count": len(pending_expenses),
+        "reimbursements": [
+            ReimbursementPublic.model_validate(r).model_dump(mode="json")
+            for r in reimbursements
+        ],
+    }
+
+
 async def _require_reimbursement(
     db: AsyncSession,
     reimbursement_id: UUID,

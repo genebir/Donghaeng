@@ -125,6 +125,96 @@ function KpiMini({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ── 정산 현황 카드 ───────────────────────────────────────────────────────
+
+type ReimbursementStatus = "draft" | "confirmed" | "completed";
+interface MyReimbursement {
+  id: string;
+  status: ReimbursementStatus;
+  total_amount: string;
+  currency: string;
+  created_at: string;
+  completed_at: string | null;
+}
+interface MySummary {
+  pending_amount: string;
+  pending_expense_count: number;
+  reimbursements: MyReimbursement[];
+}
+
+const REIMB_STATUS: Record<ReimbursementStatus, { label: string; style: string }> = {
+  draft:     { label: "정산 대기", style: "bg-mustard/15 text-mustard" },
+  confirmed: { label: "송금 예정", style: "bg-ocean/15 text-ocean" },
+  completed: { label: "송금 완료", style: "bg-sage/15 text-sage" },
+};
+
+function MySettlementCard({ teamId }: { teamId: string }) {
+  const [summary, setSummary] = useState<MySummary | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/reimbursements/${teamId}/mine`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((j) => { if (j?.data) setSummary(j.data); })
+      .catch(() => {});
+  }, [teamId]);
+
+  if (!summary) return null;
+
+  const hasPending = parseFloat(summary.pending_amount) > 0;
+  const activeReimbs = summary.reimbursements.filter((r) => r.status !== "completed");
+  const completedReimbs = summary.reimbursements.filter((r) => r.status === "completed");
+
+  if (!hasPending && summary.reimbursements.length === 0) return null;
+
+  return (
+    <div className="mb-5 rounded-md border border-ink/10 bg-paper px-4 py-4">
+      <p className="text-caption font-medium uppercase tracking-wide text-ink-mute mb-3">나의 정산 현황</p>
+
+      {hasPending && (
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-body-sm text-ink">
+              미정산 승인 지출{" "}
+              <span className="font-semibold text-coral">
+                {formatKRW(summary.pending_amount)}
+              </span>
+            </p>
+            <p className="mt-0.5 text-caption text-ink-mute">
+              {summary.pending_expense_count}건 · 팀 회계가 정산을 생성하면 알려드려요
+            </p>
+          </div>
+        </div>
+      )}
+
+      {activeReimbs.length > 0 && (
+        <ul className="flex flex-col gap-2">
+          {activeReimbs.map((r) => {
+            const cfg = REIMB_STATUS[r.status];
+            return (
+              <li key={r.id} className="flex items-center justify-between gap-3">
+                <span className={`rounded px-1.5 py-0.5 text-caption ${cfg.style}`}>{cfg.label}</span>
+                <span className="text-body-sm font-medium text-ink">{formatKRW(r.total_amount, r.currency)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {!hasPending && activeReimbs.length === 0 && completedReimbs.length > 0 && (
+        <p className="text-body-sm text-ink-mute">
+          모든 정산이 완료됐어요.{" "}
+          <span className="text-ink">
+            총 {formatKRW(
+              completedReimbs.reduce((s, r) => s + parseFloat(r.total_amount), 0)
+            )}
+          </span>{" "}
+          수령
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── 페이지 ────────────────────────────────────────────────────────────────
 
 type Tab = "all" | "mine";
@@ -253,6 +343,9 @@ export default function ExpensesPage() {
           })}
         </div>
       )}
+
+      {/* 나의 정산 현황 */}
+      {!loading && tab === "mine" && <MySettlementCard teamId={teamId} />}
 
       {/* 반려된 지출 알림 */}
       {!loading && tab === "mine" && rejectedCount > 0 && statusFilter !== "rejected" && (

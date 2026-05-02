@@ -85,6 +85,15 @@ async def create_reimbursement(
     return {"data": _to_dict(pub)}
 
 
+@nested_router.get("/mine")
+async def get_my_reimbursement_summary(
+    access: TeamAccessContext,
+    db: DbSession,
+) -> dict[str, Any]:
+    data = await service.get_my_summary(db, access.team.id, access.user_id)
+    return {"data": data}
+
+
 @nested_router.get("")
 async def list_reimbursements(
     access: TeamAccessContext,
