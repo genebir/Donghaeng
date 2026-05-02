@@ -209,7 +209,7 @@ function buildDrawerGroups(teamId: string): DrawerGroup[] {
 
 const DASHBOARD_TABS: Tab[] = [
   { href: "/dashboard", label: "홈", icon: <IconHome />, exact: true },
-  { href: "/settings/profile", label: "설정", icon: <IconMore /> },
+  { href: "/settings/profile", label: "설정", icon: <DIconSettings /> },
 ];
 
 function buildTeamTabs(teamId: string): Tab[] {
