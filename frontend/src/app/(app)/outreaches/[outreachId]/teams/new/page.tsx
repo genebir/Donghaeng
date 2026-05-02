@@ -104,6 +104,7 @@ export default function NewTeamPage() {
             onChange={(e) => handleNameChange(e.target.value)}
             maxLength={120}
             required
+            autoFocus
           />
         </div>
 
@@ -142,6 +143,12 @@ export default function NewTeamPage() {
             placeholder="팀에 대한 간단한 설명"
             value={form.description}
             onChange={handleChange}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
             maxLength={2000}
           />
         </div>

@@ -86,6 +86,7 @@ export default function NewOutreachPage() {
             onChange={handleChange}
             maxLength={120}
             required
+            autoFocus
           />
         </div>
 
@@ -99,6 +100,7 @@ export default function NewOutreachPage() {
             className={inputClass}
             value={form.year}
             onChange={handleChange}
+            onFocus={(e) => e.target.select()}
             min={2020}
             max={2100}
             required
@@ -136,6 +138,12 @@ export default function NewOutreachPage() {
             placeholder="아웃리치에 대한 간단한 설명"
             value={form.description}
             onChange={handleChange}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
             maxLength={2000}
           />
         </div>

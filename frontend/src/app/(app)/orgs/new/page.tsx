@@ -90,6 +90,7 @@ export default function NewOrgPage() {
             onChange={(e) => handleNameChange(e.target.value)}
             maxLength={120}
             required
+            autoFocus
           />
         </div>
 
