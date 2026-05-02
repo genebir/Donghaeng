@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface OutreachMembership {
   outreach_id: string;
@@ -87,6 +87,11 @@ export default function ProfileSettingsPage() {
     bank_account_holder: "",
   });
 
+  const showToast = useCallback((message: string, type: "ok" | "err") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
   useEffect(() => {
     fetch("/api/users/me")
       .then((r) => r.json())
@@ -105,12 +110,7 @@ export default function ProfileSettingsPage() {
         showToast("프로필을 불러오지 못했어요.", "err");
       })
       .finally(() => setLoading(false));
-  }, []);
-
-  function showToast(message: string, type: "ok" | "err") {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  }
+  }, [showToast]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

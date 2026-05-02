@@ -339,6 +339,7 @@ export default function SchedulePage() {
   const [editSaving, setEditSaving] = useState(false);
 
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const todaySectionRef = useRef<HTMLElement>(null);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -484,14 +485,24 @@ export default function SchedulePage() {
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
           <h1 className="font-display mt-1 text-h1">일정</h1>
         </div>
-        {isAdmin && (
-          <button
-            onClick={() => setAddModal({ open: true })}
-            className="inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80"
-          >
-            + 일정 추가
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {upcomingGroups.some((g) => g.key === today) && (
+            <button
+              onClick={() => todaySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="inline-flex h-10 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink-soft hover:bg-paper-deep hover:text-ink transition-colors"
+            >
+              오늘
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setAddModal({ open: true })}
+              className="inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80"
+            >
+              + 일정 추가
+            </button>
+          )}
+        </div>
       </header>
 
       {/* 목록 */}
@@ -518,7 +529,7 @@ export default function SchedulePage() {
               {upcomingGroups.map(({ key, dateLabel, items: dayItems }) => {
                 const isToday = key === today;
                 return (
-                  <section key={key}>
+                  <section key={key} ref={isToday ? todaySectionRef : null}>
                     <div className={`mb-3 flex items-center justify-between ${isToday ? "sticky top-0 z-10 -mx-1 rounded-md bg-paper px-1 py-1 shadow-sm" : ""}`}>
                       <div className="flex items-center gap-2">
                         {isToday && (
