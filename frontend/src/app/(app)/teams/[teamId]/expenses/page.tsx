@@ -1,6 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { auth } from "@/auth";
-import { fetchApi } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import type { ExpenseCategory, ExpensePublic, ExpenseStatus } from "@/types/api";
 
 // ── 레이블 / 스타일 ─────────────────────────────────────────────────────────
@@ -16,21 +18,18 @@ const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   MISC: "기타",
 };
 
-const STATUS_CONFIG: Record<
-  ExpenseStatus,
-  { label: string; style: string }
-> = {
+const STATUS_CONFIG: Record<ExpenseStatus, { label: string; style: string }> = {
   pending: { label: "검토 대기", style: "bg-mustard/15 text-mustard" },
   approved: { label: "승인됨", style: "bg-sage/15 text-sage" },
   rejected: { label: "반려됨", style: "bg-rust/15 text-rust" },
   reimbursed: { label: "정산 완료", style: "bg-ink-mute/15 text-ink-mute" },
 };
 
-// ── 컴포넌트 ──────────────────────────────────────────────────────────────
+// ── 유틸 ──────────────────────────────────────────────────────────────────
 
-function formatKRW(amount: string, currency: string): string {
-  const num = parseFloat(amount);
-  if (isNaN(num)) return amount;
+function formatKRW(amount: string | number, currency = "KRW"): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (isNaN(num)) return String(amount);
   return new Intl.NumberFormat("ko-KR", {
     style: "currency",
     currency,
@@ -39,60 +38,56 @@ function formatKRW(amount: string, currency: string): string {
 }
 
 function formatDate(dt: string): string {
-  return new Date(dt).toLocaleDateString("ko-KR", {
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(dt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 }
 
-function ExpenseRow({ expense }: { expense: ExpensePublic }) {
+// ── 컴포넌트 ──────────────────────────────────────────────────────────────
+
+function ExpenseRow({ expense, teamId, isMine }: { expense: ExpensePublic; teamId: string; isMine: boolean }) {
   const status = STATUS_CONFIG[expense.status];
   return (
-    <li className="flex items-start gap-4 rounded-md border border-ink/10 bg-paper p-4">
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-start gap-2">
-          <span className="font-medium text-ink">{expense.description}</span>
-          <span className="flex-shrink-0 rounded bg-paper-deep px-1.5 py-0.5 text-caption text-ink-soft">
-            {CATEGORY_LABEL[expense.category]}
-          </span>
+    <li>
+      <Link
+        href={`/teams/${teamId}/expenses/${expense.id}`}
+        className="flex items-start gap-4 rounded-md border border-ink/10 bg-paper p-4 hover:border-ink/30 hover:shadow-sm transition-all group"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-start gap-2">
+            <span className="font-medium text-ink group-hover:text-coral transition-colors">{expense.description}</span>
+            <span className="flex-shrink-0 rounded bg-paper-deep px-1.5 py-0.5 text-caption text-ink-soft">
+              {CATEGORY_LABEL[expense.category]}
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-ink-mute">
+            <span>{formatDate(expense.spent_at)}</span>
+            {expense.vendor && <span>{expense.vendor}</span>}
+            {!isMine && expense.purchaser_name && (
+              <span className="text-ink-mute">{expense.purchaser_name}</span>
+            )}
+          </div>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-caption text-ink-mute">
-          <span>{formatDate(expense.spent_at)}</span>
-          {expense.vendor && <span>{expense.vendor}</span>}
+        <div className="flex flex-shrink-0 flex-col items-end gap-1.5">
+          <span className="font-medium text-ink">{formatKRW(expense.amount, expense.currency)}</span>
+          <span className={`rounded px-1.5 py-0.5 text-caption ${status.style}`}>{status.label}</span>
         </div>
-      </div>
-
-      <div className="flex flex-shrink-0 flex-col items-end gap-1.5">
-        <span className="font-medium text-ink">
-          {formatKRW(expense.amount, expense.currency)}
-        </span>
-        <span className={`rounded px-1.5 py-0.5 text-caption ${status.style}`}>
-          {status.label}
-        </span>
-      </div>
+      </Link>
     </li>
   );
 }
 
-function Summary({
-  expenses,
-}: {
-  expenses: ExpensePublic[];
-}) {
+function Summary({ expenses }: { expenses: ExpensePublic[] }) {
   const krwExpenses = expenses.filter((e) => e.currency === "KRW");
   const total = krwExpenses.reduce((s, e) => s + parseFloat(e.amount), 0);
-  const pending = krwExpenses
-    .filter((e) => e.status === "pending")
-    .reduce((s, e) => s + parseFloat(e.amount), 0);
+  const pending = krwExpenses.filter((e) => e.status === "pending").reduce((s, e) => s + parseFloat(e.amount), 0);
   const approved = krwExpenses
     .filter((e) => e.status === "approved" || e.status === "reimbursed")
     .reduce((s, e) => s + parseFloat(e.amount), 0);
 
   return (
     <div className="mb-6 grid grid-cols-3 gap-4">
-      <KpiMini label="전체" value={formatKRW(total.toString(), "KRW")} />
-      <KpiMini label="검토 대기" value={formatKRW(pending.toString(), "KRW")} />
-      <KpiMini label="승인됨" value={formatKRW(approved.toString(), "KRW")} />
+      <KpiMini label="전체" value={formatKRW(total)} />
+      <KpiMini label="검토 대기" value={formatKRW(pending)} />
+      <KpiMini label="승인됨" value={formatKRW(approved)} />
     </div>
   );
 }
@@ -108,58 +103,123 @@ function KpiMini({ label, value }: { label: string; value: string }) {
 
 // ── 페이지 ────────────────────────────────────────────────────────────────
 
-interface Props {
-  params: Promise<{ teamId: string }>;
-}
+type Tab = "all" | "mine";
 
-export default async function ExpensesPage({ params }: Props) {
-  const { teamId } = await params;
-  const session = await auth();
-  if (!session) return null;
+export default function ExpensesPage() {
+  const { teamId } = useParams<{ teamId: string }>();
 
-  const expenses = await fetchApi<ExpensePublic[]>(
-    `/teams/${teamId}/expenses`,
-    session.accessToken,
-  );
+  const [allExpenses, setAllExpenses] = useState<ExpensePublic[]>([]);
+  const [meId, setMeId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("all");
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
 
-  // 최신 순 정렬
-  const sorted = [...expenses].sort(
-    (a, b) => new Date(b.spent_at).getTime() - new Date(a.spent_at).getTime(),
-  );
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [expRes, meRes] = await Promise.all([
+          fetch(`/api/expenses/${teamId}`),
+          fetch("/api/users/me"),
+        ]);
+        if (expRes.ok) {
+          const json = await expRes.json();
+          const raw: ExpensePublic[] = Array.isArray(json) ? json : (json.data ?? []);
+          const sorted = [...raw].sort(
+            (a, b) => new Date(b.spent_at).getTime() - new Date(a.spent_at).getTime()
+          );
+          setAllExpenses(sorted);
+        }
+        if (meRes.ok) {
+          const me = (await meRes.json()).data;
+          setMeId(me?.id ?? null);
+        }
+      } catch {
+        showToast("불러오기에 실패했어요.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [teamId, showToast]);
+
+  const displayed = tab === "mine" && meId
+    ? allExpenses.filter((e) => e.purchaser_user_id === meId)
+    : allExpenses;
 
   return (
     <div className="mx-auto max-w-[720px]">
-      <header className="mb-8 flex items-center justify-between">
+      {toast && (
+        <div className="fixed right-5 top-5 z-50 rounded-md border-l-2 border-l-rust bg-ink px-5 py-3 text-body-sm text-paper shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      <header className="mb-6 flex items-center justify-between">
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
           <h1 className="font-display mt-1 text-h1">지출</h1>
         </div>
         <Link
           href={`/teams/${teamId}/expenses/new`}
-          className="inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:bg-ink-soft"
+          className="inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80"
         >
           + 등록
         </Link>
       </header>
 
-      {expenses.length > 0 && <Summary expenses={expenses} />}
-
-      {expenses.length === 0 ? (
-        <div className="py-16 text-center">
-          <p className="text-body text-ink-mute">등록된 지출이 없습니다.</p>
-          <Link
-            href={`/teams/${teamId}/expenses/new`}
-            className="mt-4 inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:bg-ink-soft"
+      {/* 탭 */}
+      <div className="mb-5 flex gap-1 rounded-md border border-ink/10 bg-paper-deep p-1">
+        {(["all", "mine"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded py-1.5 text-body-sm font-medium transition-colors ${
+              tab === t ? "bg-paper text-ink shadow-sm" : "text-ink-mute hover:text-ink"
+            }`}
           >
-            첫 지출 등록하기
-          </Link>
+            {t === "all" ? "전체" : "내 지출"}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-md bg-paper-deep" />
+          ))}
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {sorted.map((e) => (
-            <ExpenseRow key={e.id} expense={e} />
-          ))}
-        </ul>
+        <>
+          {displayed.length > 0 && <Summary expenses={displayed} />}
+
+          {displayed.length === 0 ? (
+            <div className="py-16 text-center">
+              <p className="text-body text-ink-mute">
+                {tab === "mine" ? "등록한 지출이 없습니다." : "등록된 지출이 없습니다."}
+              </p>
+              {tab === "all" && (
+                <Link
+                  href={`/teams/${teamId}/expenses/new`}
+                  className="mt-4 inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80"
+                >
+                  첫 지출 등록하기
+                </Link>
+              )}
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {displayed.map((e) => (
+                <ExpenseRow key={e.id} expense={e} teamId={teamId} isMine={tab === "mine" || e.purchaser_user_id === meId} />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );

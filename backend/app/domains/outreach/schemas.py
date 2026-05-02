@@ -4,6 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.domains.auth.schemas import UserPublic
+from app.domains.outreach.models import OutreachRole
+
 
 class OutreachCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
@@ -44,3 +47,21 @@ class OutreachPublic(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class OutreachMembershipCreate(BaseModel):
+    user_id: UUID
+    role: OutreachRole
+    team_id: UUID | None = None  # STAFF 역할 시 필수
+
+
+class OutreachMembershipPublic(BaseModel):
+    id: UUID
+    outreach_id: UUID
+    user_id: UUID
+    user: UserPublic
+    role: OutreachRole
+    team_id: UUID | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True, "populate_by_name": True}

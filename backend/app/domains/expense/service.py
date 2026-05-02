@@ -203,6 +203,31 @@ async def approve_expense(
     return expense
 
 
+async def bulk_approve_expenses(
+    db: AsyncSession,
+    team_id: UUID,
+    expense_ids: list[UUID],
+    *,
+    approver_user_id: UUID,
+) -> list[Expense]:
+    """Approve all pending/rejected expenses in expense_ids that belong to team_id.
+    Silently skip already-approved or reimbursed ones."""
+    stmt = select(Expense).where(
+        Expense.id.in_(expense_ids),
+        Expense.team_id == team_id,
+        Expense.status.in_([ExpenseStatus.PENDING, ExpenseStatus.REJECTED]),
+    )
+    expenses = list((await db.execute(stmt)).scalars())
+    now = datetime.now(UTC)
+    for e in expenses:
+        e.status = ExpenseStatus.APPROVED
+        e.approved_by_user_id = approver_user_id
+        e.approved_at = now
+        e.rejection_reason = None
+    await db.commit()
+    return expenses
+
+
 async def reject_expense(
     db: AsyncSession,
     expense: Expense,

@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Self
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.domains.team.models import TeamStatus
 
@@ -67,7 +67,7 @@ class DestinationUpsert(BaseModel):
     address: str | None = Field(default=None, max_length=255)
     coordinator_name: str | None = Field(default=None, max_length=120)
     coordinator_phone: str | None = Field(default=None, max_length=32)
-    coordinator_email: EmailStr | None = None
+    coordinator_email: str | None = Field(default=None, max_length=254)
     timezone: str = Field(default="Asia/Seoul", min_length=1, max_length=64)
     notes: str | None = Field(default=None, max_length=2000)
 

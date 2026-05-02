@@ -47,6 +47,7 @@ interface ExpenseItem {
   amount: string;
   currency: string;
   status: string;
+  spent_at: string;
 }
 
 // ── 유틸 ──────────────────────────────────────────────────────────────────
@@ -160,10 +161,13 @@ export default async function TeamHomePage({ params }: Props) {
   const doneItems = checklist.filter((c) => c.status === "done").length;
   const progressPct = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
 
-  // 이번 주 지출 합계
-  const weeklyTotal = expenses
-    .filter((e) => e.currency === "KRW" && e.status !== "rejected")
-    .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+  // 최근 7일 지출 합계
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const recentExpenses = expenses.filter(
+    (e) => e.currency === "KRW" && e.status !== "rejected" && new Date(e.spent_at) >= sevenDaysAgo
+  );
+  const weeklyTotal = recentExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
   return (
     <div className="mx-auto max-w-[860px]">
@@ -205,9 +209,9 @@ export default async function TeamHomePage({ params }: Props) {
           sub={totalItems > 0 ? `${progressPct}%` : "아직 없음"}
         />
         <KpiCard
-          label="이번 주 지출"
+          label="최근 7일 지출"
           value={weeklyTotal > 0 ? formatKRW(weeklyTotal.toString()) : "0원"}
-          sub={`총 ${expenses.length}건`}
+          sub={recentExpenses.length > 0 ? `${recentExpenses.length}건` : `전체 ${expenses.length}건`}
         />
         {team.destination && (
           <KpiCard
@@ -300,7 +304,7 @@ export default async function TeamHomePage({ params }: Props) {
         </SectionCard>
 
         {/* 방문지 정보 */}
-        <SectionCard title="방문지 정보" href={`/teams/${teamId}`}>
+        <SectionCard title="방문지 정보" href={`/teams/${teamId}/settings`}>
           {!team.destination ? (
             <EmptyItem message="방문지 정보가 없습니다." />
           ) : (

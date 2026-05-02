@@ -46,10 +46,15 @@ class ExpenseRejectIn(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
 
 
+class ExpenseBulkApproveIn(BaseModel):
+    expense_ids: list[UUID] = Field(min_length=1)
+
+
 class ExpensePublic(BaseModel):
     id: UUID
     team_id: UUID
     purchaser_user_id: UUID
+    purchaser_name: str | None = None
     amount: Decimal
     currency: str
     spent_at: datetime

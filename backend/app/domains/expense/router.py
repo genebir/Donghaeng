@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import Response
 
 from app.core.permissions import (
     ExpenseAccessContext,
@@ -16,12 +17,16 @@ from app.domains.expense.models import (
     ExpenseStatus,
     PaymentMethod,
 )
+from app.domains.expense.reports import build_expense_xlsx
 from app.domains.expense.schemas import (
+    ExpenseBulkApproveIn,
     ExpenseCreate,
     ExpensePublic,
     ExpenseRejectIn,
     ExpenseUpdate,
 )
+from app.domains.notification import service as notif_service
+from app.domains.notification.models import NotificationKind
 
 # /api/v1/teams/{team_id}/expenses
 nested_router = APIRouter(prefix="/teams/{team_id}/expenses", tags=["expense"])
@@ -48,6 +53,42 @@ async def create_expense(
     return {"data": _to_dict(expense)}
 
 
+@nested_router.post("/bulk-approve")
+async def bulk_approve_expenses(
+    payload: ExpenseBulkApproveIn,
+    access: TeamAccessContext,
+    db: DbSession,
+) -> dict[str, Any]:
+    if not access.is_admin:
+        raise HTTPException(403, "회계 관리 권한이 필요합니다.")
+    updated = await service.bulk_approve_expenses(
+        db, access.team.id, payload.expense_ids, approver_user_id=access.user_id
+    )
+    return {"data": [_to_dict(e) for e in updated]}
+
+
+@nested_router.get("/reports/expenses.xlsx")
+async def download_expense_report(
+    access: TeamAccessContext,
+    db: DbSession,
+) -> Response:
+    if not access.is_admin:
+        raise HTTPException(403, "회계 관리 권한이 필요합니다.")
+    expenses = await service.list_expenses(
+        db,
+        access.team.id,
+        actor_user_id=access.user_id,
+        is_admin=True,
+    )
+    xlsx_bytes = build_expense_xlsx(expenses, team_name=access.team.name)
+    filename = f"{access.team.name}_지출내역.xlsx"
+    return Response(
+        content=xlsx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @nested_router.get("")
 async def list_expenses(
     access: TeamAccessContext,
@@ -61,6 +102,9 @@ async def list_expenses(
     spent_from: Annotated[datetime | None, Query(alias="from")] = None,
     spent_to: Annotated[datetime | None, Query(alias="to")] = None,
 ) -> dict[str, Any]:
+    from sqlalchemy import select
+    from app.domains.user.models import User
+
     expenses = await service.list_expenses(
         db,
         access.team.id,
@@ -73,7 +117,20 @@ async def list_expenses(
         spent_from=spent_from,
         spent_to=spent_to,
     )
-    return {"data": [_to_dict(e) for e in expenses]}
+    uid_set = {e.purchaser_user_id for e in expenses}
+    users_by_id: dict[UUID, User] = {}
+    if uid_set:
+        rows = list((await db.execute(select(User).where(User.id.in_(uid_set)))).scalars())
+        users_by_id = {u.id: u for u in rows}
+
+    result = []
+    for e in expenses:
+        pub = ExpensePublic.model_validate(e)
+        user = users_by_id.get(e.purchaser_user_id)
+        if user:
+            pub.purchaser_name = user.name
+        result.append(pub.model_dump(mode="json"))
+    return {"data": result}
 
 
 @flat_router.get("/{expense_id}")
@@ -113,8 +170,18 @@ async def delete_expense(
 async def approve_expense(
     access: ExpenseAdminContext, db: DbSession
 ) -> dict[str, Any]:
+    expense = access.expense
     updated = await service.approve_expense(
-        db, access.expense, approver_user_id=access.user_id
+        db, expense, approver_user_id=access.user_id
+    )
+    await notif_service.create_notification(
+        db,
+        recipient_user_id=expense.purchaser_user_id,
+        team_id=expense.team_id,
+        kind=NotificationKind.EXPENSE_APPROVED,
+        title="지출이 승인됐어요",
+        body=expense.description,
+        ref_id=expense.id,
     )
     return {"data": _to_dict(updated)}
 
@@ -123,10 +190,20 @@ async def approve_expense(
 async def reject_expense(
     payload: ExpenseRejectIn, access: ExpenseAdminContext, db: DbSession
 ) -> dict[str, Any]:
+    expense = access.expense
     updated = await service.reject_expense(
         db,
-        access.expense,
+        expense,
         reason=payload.reason,
         approver_user_id=access.user_id,
+    )
+    await notif_service.create_notification(
+        db,
+        recipient_user_id=expense.purchaser_user_id,
+        team_id=expense.team_id,
+        kind=NotificationKind.EXPENSE_REJECTED,
+        title="지출이 반려됐어요",
+        body=payload.reason or expense.description,
+        ref_id=expense.id,
     )
     return {"data": _to_dict(updated)}

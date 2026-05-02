@@ -2,16 +2,17 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 from app.domains.auth.schemas import UserPublic
 from app.domains.member.models import TeamPart, TeamRole
 
 
 class TeamMemberAdd(BaseModel):
-    """이메일로 기존 가입 유저를 팀에 추가. 추후 invite token 흐름으로 확장."""
+    """이메일 또는 user_id로 기존 가입 유저를 팀에 추가."""
 
-    email: EmailStr
+    email: str | None = Field(default=None, max_length=254)
+    user_id: UUID | None = None  # 카카오 synthetic 이메일 우회용
     role: TeamRole = TeamRole.MEMBER
     part: TeamPart | None = None
     is_part_lead: bool = False

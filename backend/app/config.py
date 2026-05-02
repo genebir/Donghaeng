@@ -29,6 +29,13 @@ class Settings(BaseSettings):
 
     sentry_dsn: str | None = None
 
+    s3_endpoint_url: str | None = None       # http://localhost:9000 for MinIO dev
+    s3_access_key: str | None = None
+    s3_secret_key: str | None = None
+    s3_bucket: str = "donghaeng-media"
+    s3_region: str = "auto"                  # R2 uses "auto", MinIO uses "us-east-1"
+    s3_public_url: str | None = None         # Public base URL for media (R2 public domain)
+
     @property
     def is_production(self) -> bool:
         return self.environment == "production"

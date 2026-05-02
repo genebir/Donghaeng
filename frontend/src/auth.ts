@@ -25,8 +25,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           body: JSON.stringify({
             provider: account.provider,
             subject: account.providerAccountId,
-            email: user.email,
-            name: user.name,
+            // 카카오는 이메일 동의 없이 null일 수 있음 — synthetic 주소로 fallback
+            email: user.email ?? `${account.provider}_${account.providerAccountId}@noemail.local`,
+            name: user.name ?? account.providerAccountId,
             profile_image_url: user.image ?? null,
           }),
         });

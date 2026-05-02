@@ -63,13 +63,12 @@ OrgOwner = Annotated[OrgMembership, Depends(require_org_owner)]
 # ===========================================================================
 # Outreach scope
 # ===========================================================================
-# 권한은 부모 조직의 멤버십을 따른다 — outreach 자체에 별도의 role은 없음.
 
 async def _resolve_outreach_membership(
     db: DbSession,
     user: CurrentUser,
     outreach_id: UUID,
-) -> tuple[Outreach, OrgMembership]:
+) -> tuple[Outreach, OrgMembership | None]:
     outreach = (
         await db.execute(select(Outreach).where(Outreach.id == outreach_id))
     ).scalar_one_or_none()
@@ -79,7 +78,7 @@ async def _resolve_outreach_membership(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="이 아웃리치에 접근할 수 없습니다.",
         )
-    membership = (
+    org_membership = (
         await db.execute(
             select(OrgMembership).where(
                 OrgMembership.organization_id == outreach.organization_id,
@@ -87,12 +86,27 @@ async def _resolve_outreach_membership(
             )
         )
     ).scalar_one_or_none()
-    if membership is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="이 아웃리치에 접근할 수 없습니다.",
+
+    if org_membership:
+        return outreach, org_membership
+
+    # OutreachMembership 체크
+    from app.domains.outreach.models import OutreachMembership
+    om = (
+        await db.execute(
+            select(OutreachMembership).where(
+                OutreachMembership.outreach_id == outreach_id,
+                OutreachMembership.user_id == user.id,
+            )
         )
-    return outreach, membership
+    ).scalar_one_or_none()
+    if om:
+        return outreach, None
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="이 아웃리치에 접근할 수 없습니다.",
+    )
 
 
 async def require_outreach_member(
@@ -112,13 +126,25 @@ async def require_outreach_admin(
     user: CurrentUser,
     outreach_id: Annotated[UUID, Path()],
 ) -> Outreach:
-    outreach, membership = await _resolve_outreach_membership(db, user, outreach_id)
-    if membership.role not in (OrgRole.OWNER, OrgRole.ADMIN):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="조직 관리자 권한이 필요합니다.",
+    outreach, org_membership = await _resolve_outreach_membership(db, user, outreach_id)
+    if org_membership and org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
+        return outreach
+    # OutreachMembership.DIRECTOR 체크
+    from app.domains.outreach.models import OutreachMembership, OutreachRole
+    om = (
+        await db.execute(
+            select(OutreachMembership).where(
+                OutreachMembership.outreach_id == outreach_id,
+                OutreachMembership.user_id == user.id,
+            )
         )
-    return outreach
+    ).scalar_one_or_none()
+    if om and om.role == OutreachRole.DIRECTOR:
+        return outreach
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="아웃리치 관리 권한이 필요합니다.",
+    )
 
 
 OutreachAdminContext = Annotated[Outreach, Depends(require_outreach_admin)]
@@ -135,7 +161,7 @@ async def _resolve_team_membership(
     db: DbSession,
     user: CurrentUser,
     team_id: UUID,
-) -> tuple[Team, OrgMembership]:
+) -> tuple[Team, OrgMembership | None]:
     team = (
         await db.execute(select(Team).where(Team.id == team_id))
     ).scalar_one_or_none()
@@ -153,7 +179,8 @@ async def _resolve_team_membership(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="이 팀에 접근할 수 없습니다.",
         )
-    membership = (
+
+    org_membership = (
         await db.execute(
             select(OrgMembership).where(
                 OrgMembership.organization_id == outreach.organization_id,
@@ -161,12 +188,45 @@ async def _resolve_team_membership(
             )
         )
     ).scalar_one_or_none()
-    if membership is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="이 팀에 접근할 수 없습니다.",
+
+    # OWNER/ADMIN → 바로 통과
+    if org_membership and org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
+        return team, org_membership
+
+    # OutreachMembership 확인 (DIRECTOR or STAFF for this team)
+    from app.domains.outreach.models import OutreachMembership, OutreachRole
+    om = (
+        await db.execute(
+            select(OutreachMembership).where(
+                OutreachMembership.outreach_id == team.outreach_id,
+                OutreachMembership.user_id == user.id,
+            )
         )
-    return team, membership
+    ).scalar_one_or_none()
+    if om:
+        # DIRECTOR → outreach 전체 접근
+        # STAFF → team_id 일치 시 접근
+        if om.role == OutreachRole.DIRECTOR or (
+            om.role == OutreachRole.STAFF and om.team_id == team.id
+        ):
+            return team, org_membership  # org_membership may be None
+
+    # TeamMember 직접 확인
+    tm = (
+        await db.execute(
+            select(TeamMember).where(
+                TeamMember.team_id == team.id,
+                TeamMember.user_id == user.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if tm:
+        return team, org_membership
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="이 팀에 접근할 수 없습니다.",
+    )
 
 
 async def require_team_member(
@@ -185,11 +245,28 @@ async def _check_team_admin(
     db: DbSession,
     user_id: UUID,
     team: Team,
-    org_membership: OrgMembership,
+    org_membership: OrgMembership | None,
 ) -> bool:
-    """DATABASE.md '팀 일반 관리: role = LEADER' + 조직 OWNER/ADMIN."""
-    if org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
+    """DATABASE.md '팀 일반 관리: role = LEADER' + 조직 OWNER/ADMIN + OutreachMembership DIRECTOR/STAFF."""
+    # OrgRole OWNER/ADMIN
+    if org_membership and org_membership.role in (OrgRole.OWNER, OrgRole.ADMIN):
         return True
+    # OutreachMembership DIRECTOR or STAFF for this team
+    from app.domains.outreach.models import OutreachMembership, OutreachRole
+    om = (
+        await db.execute(
+            select(OutreachMembership).where(
+                OutreachMembership.outreach_id == team.outreach_id,
+                OutreachMembership.user_id == user_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if om:
+        if om.role == OutreachRole.DIRECTOR:
+            return True
+        if om.role == OutreachRole.STAFF and om.team_id == team.id:
+            return True
+    # TeamMember LEADER
     leader = (
         await db.execute(
             select(TeamMember).where(

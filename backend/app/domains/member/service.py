@@ -11,6 +11,9 @@ from app.domains.member.schemas import (
     TeamMemberPublic,
     TeamMemberUpdate,
 )
+from app.domains.org.models import OrgMembership, OrgRole
+from app.domains.outreach.models import Outreach
+from app.domains.team.models import Team
 from app.domains.user.models import User
 
 
@@ -33,17 +36,25 @@ def _to_public(member: TeamMember, user: User) -> TeamMemberPublic:
 async def add_member_by_email(
     db: AsyncSession, team_id: UUID, payload: TeamMemberAdd
 ) -> TeamMemberPublic:
-    user = (
-        await db.execute(select(User).where(User.email == payload.email))
-    ).scalar_one_or_none()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"이메일 '{payload.email}'로 가입된 사용자를 찾지 못했습니다. "
-                "먼저 본인이 로그인하면 자동 가입됩니다."
-            ),
-        )
+    if not payload.email and not payload.user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email 또는 user_id 중 하나는 필요합니다.")
+
+    if payload.user_id:
+        user = (await db.execute(select(User).where(User.id == payload.user_id))).scalar_one_or_none()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+    else:
+        user = (
+            await db.execute(select(User).where(User.email == payload.email))
+        ).scalar_one_or_none()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=(
+                    f"이메일 '{payload.email}'로 가입된 사용자를 찾지 못했습니다. "
+                    "먼저 본인이 로그인하면 자동 가입됩니다."
+                ),
+            )
 
     existing = (
         await db.execute(
@@ -57,6 +68,24 @@ async def add_member_by_email(
             status_code=status.HTTP_409_CONFLICT,
             detail="이미 이 팀에 속해있는 멤버입니다.",
         )
+
+    # 팀 추가 시 소속 org에 OrgMembership(MEMBER)이 없으면 자동 생성
+    team = (await db.execute(select(Team).where(Team.id == team_id))).scalar_one_or_none()
+    if team:
+        outreach = (await db.execute(select(Outreach).where(Outreach.id == team.outreach_id))).scalar_one_or_none()
+        if outreach:
+            org_exists = (await db.execute(
+                select(OrgMembership).where(
+                    OrgMembership.organization_id == outreach.organization_id,
+                    OrgMembership.user_id == user.id,
+                )
+            )).scalar_one_or_none()
+            if not org_exists:
+                db.add(OrgMembership(
+                    organization_id=outreach.organization_id,
+                    user_id=user.id,
+                    role=OrgRole.MEMBER,
+                ))
 
     member = TeamMember(
         team_id=team_id,

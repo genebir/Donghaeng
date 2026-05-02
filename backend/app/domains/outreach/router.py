@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Annotated, Any
+from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Path, status
 
 from app.core.permissions import (
     OrgAdmin,
@@ -8,10 +9,13 @@ from app.core.permissions import (
     OutreachAdminContext,
     OutreachContext,
 )
+from app.domains.org.models import OrgRole
 from app.deps import DbSession
 from app.domains.outreach import service
 from app.domains.outreach.schemas import (
     OutreachCreate,
+    OutreachMembershipCreate,
+    OutreachMembershipPublic,
     OutreachPublic,
     OutreachUpdate,
 )
@@ -36,7 +40,10 @@ def _to_dict(outreach: Any) -> dict[str, Any]:
 async def list_outreaches(
     membership: OrgMember, db: DbSession
 ) -> dict[str, Any]:
-    items = await service.list_outreaches(db, membership.organization_id)
+    is_admin = membership.role in (OrgRole.OWNER, OrgRole.ADMIN)
+    items = await service.list_outreaches(
+        db, membership.organization_id, membership.user_id, is_admin
+    )
     return {"data": [_to_dict(o) for o in items]}
 
 
@@ -72,3 +79,31 @@ async def update_outreach(
 ) -> dict[str, Any]:
     updated = await service.update_outreach(db, outreach.id, payload)
     return {"data": _to_dict(updated)}
+
+
+@flat_router.get("/{outreach_id}/members")
+async def list_outreach_members_route(
+    outreach: OutreachContext, db: DbSession
+) -> dict[str, Any]:
+    members = await service.list_outreach_members(db, outreach.id)
+    return {"data": [m.model_dump(mode="json") for m in members]}
+
+
+@flat_router.post("/{outreach_id}/members", status_code=status.HTTP_201_CREATED)
+async def add_outreach_member_route(
+    outreach: OutreachAdminContext,
+    payload: OutreachMembershipCreate,
+    db: DbSession,
+) -> dict[str, Any]:
+    m = await service.add_outreach_member(db, outreach.id, payload)
+    return {"data": m.model_dump(mode="json")}
+
+
+@flat_router.delete("/{outreach_id}/members/{membership_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_outreach_member_route(
+    outreach: OutreachAdminContext,
+    membership_id: Annotated[UUID, Path()],
+    db: DbSession,
+) -> None:
+    await service.remove_outreach_member(db, outreach.id, membership_id)
+    await db.commit()

@@ -15,6 +15,12 @@ from app.domains.checklist.router import flat_router as checklist_flat_router
 from app.domains.checklist.router import nested_router as checklist_nested_router
 from app.domains.expense.router import flat_router as expense_flat_router
 from app.domains.expense.router import nested_router as expense_nested_router
+from app.domains.reimbursement.router import flat_router as reimbursement_flat_router
+from app.domains.reimbursement.router import nested_router as reimbursement_nested_router
+from app.domains.home_update.router import nested_router as home_update_nested_router
+from app.domains.home_update.router import public_router as home_update_public_router
+from app.domains.media.router import nested_router as media_nested_router
+from app.domains.media.router import flat_router as media_flat_router
 from app.domains.member.router import flat_router as member_flat_router
 from app.domains.member.router import nested_router as member_nested_router
 from app.domains.org.router import router as org_router
@@ -24,6 +30,11 @@ from app.domains.schedule.router import flat_router as schedule_flat_router
 from app.domains.schedule.router import nested_router as schedule_nested_router
 from app.domains.team.router import flat_router as team_flat_router
 from app.domains.team.router import nested_router as team_nested_router
+from app.domains.testimony.router import flat_router as testimony_flat_router
+from app.domains.testimony.router import nested_router as testimony_nested_router
+from app.domains.testimony.router import public_router as testimony_public_router
+from app.domains.notification.router import router as notification_router
+from app.domains.user.router import router as user_router
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -70,6 +81,17 @@ def create_app() -> FastAPI:
     app.include_router(budget_router, prefix="/api/v1")
     app.include_router(expense_nested_router, prefix="/api/v1")
     app.include_router(expense_flat_router, prefix="/api/v1")
+    app.include_router(reimbursement_nested_router, prefix="/api/v1")
+    app.include_router(reimbursement_flat_router, prefix="/api/v1")
+    app.include_router(home_update_nested_router, prefix="/api/v1")
+    app.include_router(home_update_public_router, prefix="/api/v1")
+    app.include_router(media_nested_router, prefix="/api/v1")
+    app.include_router(media_flat_router, prefix="/api/v1")
+    app.include_router(testimony_nested_router, prefix="/api/v1")
+    app.include_router(testimony_flat_router, prefix="/api/v1")
+    app.include_router(testimony_public_router, prefix="/api/v1")
+    app.include_router(notification_router, prefix="/api/v1")
+    app.include_router(user_router, prefix="/api/v1")
 
     @app.get("/healthz", tags=["meta"])
     async def healthz() -> dict[str, str]:

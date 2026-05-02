@@ -13,21 +13,24 @@ async def upsert_user_from_oauth(db: AsyncSession, payload: OAuthExchangeIn) -> 
     )
     user = (await db.execute(stmt)).scalar_one_or_none()
 
+    fallback_email = f"{payload.provider}_{payload.subject}@noemail.local"
+    email = payload.email or fallback_email
+    name = payload.name or payload.subject
+
     if user is None:
-        # 동일 이메일의 기존 유저(다른 provider)와 자동 병합은 보안 이슈가 있어 새 row 생성.
-        # 충돌 시 email UNIQUE에서 막힘 → 클라이언트에 안내.
         user = User(
-            email=payload.email,
-            name=payload.name,
+            email=email,
+            name=name,
             profile_image_url=payload.profile_image_url,
             oauth_provider=payload.provider,
             oauth_subject=payload.subject,
         )
         db.add(user)
     else:
-        # 프로필 변동분 동기화 (이름/이미지/이메일).
-        user.name = payload.name
-        user.email = payload.email
+        user.name = name
+        # 실제 이메일이 들어오면 업데이트. synthetic 주소로 덮어쓰지 않음.
+        if payload.email:
+            user.email = email
         user.profile_image_url = payload.profile_image_url
 
     await db.flush()

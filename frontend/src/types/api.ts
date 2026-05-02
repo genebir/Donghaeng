@@ -139,6 +139,7 @@ export interface ExpensePublic {
   id: string;
   team_id: string;
   purchaser_user_id: string;
+  purchaser_name: string | null;
   amount: string;
   currency: string;
   spent_at: string;
@@ -146,6 +147,7 @@ export interface ExpensePublic {
   category: ExpenseCategory;
   description: string;
   payment_method: PaymentMethod | null;
+  receipt_media_id: string | null;
   status: ExpenseStatus;
   approved_by_user_id: string | null;
   approved_at: string | null;
@@ -154,6 +156,73 @@ export interface ExpensePublic {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ── 본진 공유 ──────────────────────────────────────────────────────────────────
+
+export type HomeUpdateStatus = "draft" | "published";
+
+export interface HomeUpdatePublic {
+  id: string;
+  team_id: string;
+  author_user_id: string;
+  status: HomeUpdateStatus;
+  title: string;
+  content: string;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SharePageData {
+  team: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+  };
+  updates: HomeUpdatePublic[];
+}
+
+// ── 정산 ─────────────────────────────────────────────────────────────────────
+
+export type ReimbursementStatus = "draft" | "confirmed" | "completed";
+
+export interface ReimbursementPublic {
+  id: string;
+  team_id: string;
+  recipient_user_id: string;
+  created_by_user_id: string;
+  status: ReimbursementStatus;
+  total_amount: string;
+  currency: string;
+  transfer_method: string | null;
+  transfer_reference: string | null;
+  notes: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  expenses: ExpensePublic[];
+  recipient_name: string | null;
+  recipient_bank_name: string | null;
+  recipient_bank_account_holder: string | null;
+  recipient_bank_account_number_masked: string | null;
+}
+
+export interface ReimbursementPreviewItem {
+  recipient_user_id: string;
+  recipient_name: string | null;
+  total_amount: string;
+  by_category: Record<string, string>;
+  expense_count: number;
+}
+
+export interface UserBankInfo {
+  user_id: string;
+  name: string;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  bank_account_holder: string | null;
 }
 
 // ── 예산 ────────────────────────────────────────────────────────────────────
@@ -176,4 +245,34 @@ export interface BudgetSummaryMeta {
 export interface BudgetSummaryResponse {
   data: BudgetCategorySummary[];
   meta: BudgetSummaryMeta;
+}
+
+// ── 미디어 ──────────────────────────────────────────────────────────────────
+
+export type MediaKind = "photo" | "video" | "document";
+export type MediaStatus = "pending" | "ready" | "failed";
+export type MediaVisibility = "team" | "public";
+
+export interface MediaAssetPublic {
+  id: string;
+  team_id: string;
+  uploader_user_id: string;
+  status: MediaStatus;
+  kind: MediaKind;
+  filename: string;
+  content_type: string;
+  byte_size: number | null;
+  visibility: MediaVisibility;
+  is_selected: boolean;
+  notes: string | null;
+  view_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MediaPresignOut {
+  media_id: string;
+  upload_url: string;
+  method: string;
+  expires_in: number;
 }
