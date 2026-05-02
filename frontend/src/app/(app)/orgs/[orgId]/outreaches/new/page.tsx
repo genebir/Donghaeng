@@ -59,19 +59,24 @@ export default function NewOutreachPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg py-12 px-4">
-      <div className="mb-8">
-        <Link href="/dashboard" className="text-body-sm text-ink-mute hover:text-ink">
-          ← 대시보드로
-        </Link>
-      </div>
+    <div className="mx-auto max-w-lg">
+      <Link
+        href="/dashboard"
+        className="mb-6 inline-flex items-center gap-1.5 text-body-sm text-ink-mute hover:text-ink"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M11 7H3M6 4L3 7l3 3" />
+        </svg>
+        대시보드
+      </Link>
 
-      <h1 className="font-display text-h1 mb-2">
-        아웃리치 만들기<span className="text-coral">.</span>
-      </h1>
-      <p className="text-body text-ink-soft mb-10">
-        아웃리치를 만들고 팀과 멤버를 구성하세요.
-      </p>
+      <header className="mb-10">
+        <p className="tracking-overline text-overline uppercase text-ink-mute">아웃리치</p>
+        <h1 className="font-display mt-1 text-h1">아웃리치 만들기<span className="text-coral">.</span></h1>
+        <p className="mt-2 text-body text-ink-soft">
+          아웃리치를 만들고 팀과 멤버를 구성하세요.
+        </p>
+      </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col gap-1.5">
