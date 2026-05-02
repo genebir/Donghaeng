@@ -161,7 +161,7 @@ export default function ProfileSettingsPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed right-5 top-5 z-50 flex items-center gap-3 rounded-md border-l-2 bg-ink px-5 py-3 text-body-sm text-paper shadow-lg ${
+          className={`fixed right-5 top-16 z-50 flex items-center gap-3 rounded-md border-l-2 bg-ink px-5 py-3 text-body-sm text-paper shadow-lg ${
             toast.type === "ok" ? "border-sage" : "border-rust"
           }`}
         >

@@ -473,7 +473,7 @@ export default function SchedulePage() {
     <div className="mx-auto max-w-[720px]">
       {/* 토스트 */}
       {toast && (
-        <div className={`fixed right-5 top-5 z-50 rounded-md border-l-2 bg-ink px-5 py-3 text-body-sm text-paper shadow-lg ${toast.ok ? "border-l-sage" : "border-l-rust"}`}>
+        <div className={`fixed right-5 top-16 z-50 rounded-md border-l-2 bg-ink px-5 py-3 text-body-sm text-paper shadow-lg ${toast.ok ? "border-l-sage" : "border-l-rust"}`}>
           {toast.msg}
         </div>
       )}
