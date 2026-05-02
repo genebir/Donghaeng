@@ -16,6 +16,7 @@ interface Testimony {
   content: string;
   is_featured: boolean;
   submitted_name: string | null;
+  submitter_user_id: string | null;
   created_at: string;
 }
 
@@ -290,6 +291,8 @@ export default function TestimoniesPage() {
   const [formKind, setFormKind] = useState<TestimonyKind>("testimony");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [meId, setMeId] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -300,11 +303,24 @@ export default function TestimoniesPage() {
     setLoading(true);
     const qs = filter !== "all" ? `?kind=${filter}` : "";
     try {
-      const res = await fetch(`/api/testimonies/${teamId}${qs}`);
-      if (res.ok) setTestimonies((await res.json()).data ?? []);
+      const [tRes, meRes] = await Promise.all([
+        fetch(`/api/testimonies/${teamId}${qs}`),
+        meId === null ? fetch("/api/users/me") : Promise.resolve(null),
+      ]);
+      if (tRes.ok) setTestimonies((await tRes.json()).data ?? []);
+      if (meRes?.ok) {
+        const me = (await meRes.json()).data;
+        setMeId(me?.id ?? null);
+        const orgRole = me?.org_role;
+        const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
+        const isDirector = (me?.outreach_memberships ?? []).some((om: { role: string }) => om.role === "DIRECTOR");
+        const isStaff = (me?.outreach_memberships ?? []).some((om: { role: string; team_id: string | null }) => om.role === "STAFF" && om.team_id === teamId);
+        const isLeader = (me?.team_memberships ?? []).some((tm: { team_id: string; role: string }) => tm.team_id === teamId && tm.role === "LEADER");
+        setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
+      }
     } catch { /* silent */ }
     finally { setLoading(false); }
-  }, [teamId, filter]);
+  }, [teamId, filter]); // meId intentionally excluded to avoid infinite loop
 
   useEffect(() => { load(); }, [load]);
 
@@ -456,8 +472,8 @@ export default function TestimoniesPage() {
             <TestimonyCard
               key={t.id}
               t={t}
-              onToggleFeatured={handleToggleFeatured}
-              onDelete={handleDeleteTestimony}
+              onToggleFeatured={isAdmin ? handleToggleFeatured : undefined}
+              onDelete={isAdmin || t.submitter_user_id === meId ? handleDeleteTestimony : undefined}
             />
           ))}
         </div>
