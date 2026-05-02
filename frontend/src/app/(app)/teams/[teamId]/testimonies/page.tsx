@@ -44,18 +44,22 @@ const VIS_LABEL: Record<TestimonyVisibility, string> = {
   anonymous: "익명",
 };
 
+const VIS_OPTIONS: { value: TestimonyVisibility; label: string; desc: string }[] = [
+  { value: "team",      label: "팀 내부", desc: "팀원만 볼 수 있어요" },
+  { value: "public",    label: "공개",    desc: "본진 공유 페이지에도 노출돼요" },
+  { value: "anonymous", label: "익명",    desc: "이름 없이 제출해요" },
+];
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
-
-// ── QR 패널 ───────────────────────────────────────────────────────────────
 
 // ── QR 모달 ───────────────────────────────────────────────────────────────
 
 function QrModal({ url, label, onClose }: { url: string; label: string; onClose: () => void }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const downloadPng = () => {
+  const downloadSvg = () => {
     const svg = svgRef.current;
     if (!svg) return;
     const xml = new XMLSerializer().serializeToString(svg);
@@ -88,11 +92,11 @@ function QrModal({ url, label, onClose }: { url: string; label: string; onClose:
         </div>
         <div className="text-center">
           <p className="text-body font-medium text-ink">{label || "QR 코드"}</p>
-          <p className="mt-1 text-caption text-ink-mute font-mono truncate max-w-[240px]">{url}</p>
+          <p className="mt-1 truncate max-w-[240px] font-mono text-caption text-ink-mute">{url}</p>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={downloadPng}
+            onClick={downloadSvg}
             className="inline-flex h-9 items-center rounded-md bg-ink px-4 text-body-sm font-medium text-paper hover:bg-ink/90"
           >
             SVG 저장
@@ -179,11 +183,11 @@ function QrPanel({ teamId }: { teamId: string }) {
         <ul className="mt-4 flex flex-col gap-2">
           {tokens.map((t) => (
             <li key={t.id} className="flex items-center gap-3 rounded-sm border border-ink/10 px-4 py-2.5">
-              <div className="flex-1 min-w-0">
-                <p className="text-body-sm font-medium text-ink truncate">{t.label ?? "이름 없는 QR"}</p>
-                <p className="text-caption text-ink-mute font-mono truncate">{qrUrl(t)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-body-sm font-medium text-ink">{t.label ?? "이름 없는 QR"}</p>
+                <p className="truncate font-mono text-caption text-ink-mute">{qrUrl(t)}</p>
               </div>
-              <div className="flex-shrink-0 flex gap-2">
+              <div className="flex flex-shrink-0 gap-2">
                 <button
                   onClick={() => setShowQrModal(t)}
                   className="text-caption text-ink-soft hover:text-ink hover:underline"
@@ -220,7 +224,7 @@ function TestimonyCard({
 
   return (
     <article className="group rounded-md border border-ink/10 bg-paper p-5">
-      <div className="mb-2 flex items-start gap-2 flex-wrap">
+      <div className="mb-2 flex flex-wrap items-start gap-2">
         <span className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide ${KIND_CHIP[t.kind]}`}>
           {KIND_LABEL[t.kind]}
         </span>
@@ -235,11 +239,10 @@ function TestimonyCard({
         <span className="ml-auto text-caption text-ink-mute">{formatDate(t.created_at)}</span>
       </div>
       {t.submitted_name && (
-        <p className="text-body-sm font-medium text-ink-soft mb-1">{t.submitted_name}</p>
+        <p className="mb-1 text-body-sm font-medium text-ink-soft">{t.submitted_name}</p>
       )}
-      <p className="text-body-sm text-ink whitespace-pre-wrap">{t.content}</p>
+      <p className="whitespace-pre-wrap text-body-sm text-ink">{t.content}</p>
 
-      {/* 관리 버튼 */}
       {(onToggleFeatured || onDelete) && (
         <div className="mt-3 flex items-center gap-2 border-t border-ink/8 pt-3">
           {onToggleFeatured && (
@@ -287,8 +290,13 @@ export default function TestimoniesPage() {
   const [filter, setFilter] = useState<FilterKind>("all");
   const [showQr, setShowQr] = useState(false);
   const [writing, setWriting] = useState(false);
+
+  // 작성 폼 상태
   const [formContent, setFormContent] = useState("");
   const [formKind, setFormKind] = useState<TestimonyKind>("testimony");
+  const [formVisibility, setFormVisibility] = useState<TestimonyVisibility>("team");
+  const [formName, setFormName] = useState("");
+
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -299,12 +307,12 @@ export default function TestimoniesPage() {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
+  // 항상 전체 목록을 불러오고, 필터는 클라이언트에서 처리
   const load = useCallback(async () => {
     setLoading(true);
-    const qs = filter !== "all" ? `?kind=${filter}` : "";
     try {
       const [tRes, meRes] = await Promise.all([
-        fetch(`/api/testimonies/${teamId}${qs}`),
+        fetch(`/api/testimonies/${teamId}`),
         meId === null ? fetch("/api/users/me") : Promise.resolve(null),
       ]);
       if (tRes.ok) setTestimonies((await tRes.json()).data ?? []);
@@ -320,9 +328,22 @@ export default function TestimoniesPage() {
       }
     } catch { /* silent */ }
     finally { setLoading(false); }
-  }, [teamId, filter]); // meId intentionally excluded to avoid infinite loop
+  }, [teamId]); // meId intentionally excluded to avoid infinite loop
 
   useEffect(() => { load(); }, [load]);
+
+  // 클라이언트 필터 + 주목 항목 상단 정렬
+  const tabFiltered = filter === "all" ? testimonies : testimonies.filter((t) => t.kind === filter);
+  const displayed = [...tabFiltered].sort((a, b) => {
+    if (a.is_featured === b.is_featured) return 0;
+    return a.is_featured ? -1 : 1;
+  });
+
+  // 탭 카운트
+  const kindCounts: Record<TestimonyKind, number> = {
+    testimony: testimonies.filter((t) => t.kind === "testimony").length,
+    prayer_request: testimonies.filter((t) => t.kind === "prayer_request").length,
+  };
 
   const handleToggleFeatured = async (id: string, next: boolean) => {
     setTestimonies((prev) => prev.map((t) => t.id === id ? { ...t, is_featured: next } : t));
@@ -357,12 +378,20 @@ export default function TestimoniesPage() {
       const res = await fetch(`/api/testimonies/${teamId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: formKind, content: formContent.trim(), visibility: "team" }),
+        body: JSON.stringify({
+          kind: formKind,
+          content: formContent.trim(),
+          visibility: formVisibility,
+          submitted_name: formVisibility !== "anonymous" && formName.trim() ? formName.trim() : null,
+        }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) { showToast(json.message ?? "저장 실패", false); return; }
       setTestimonies((prev) => [json.data, ...prev]);
-      setFormContent(""); setWriting(false);
+      setFormContent("");
+      setFormName("");
+      setFormVisibility("team");
+      setWriting(false);
       showToast("작성됐어요.", true);
     } catch { showToast("잠깐 문제가 있었어요.", false); }
     finally { setBusy(false); }
@@ -384,7 +413,7 @@ export default function TestimoniesPage() {
 
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">간증 · 기도제목</p>
+          <p className="tracking-overline uppercase text-overline text-ink-mute">간증 · 기도제목</p>
           <h1 className="font-display mt-1 text-h1">간증</h1>
         </div>
         <div className="flex gap-2">
@@ -415,14 +444,22 @@ export default function TestimoniesPage() {
       {/* 작성 폼 */}
       {writing && (
         <form onSubmit={handleCreate} className="mb-6 rounded-md border border-ink/15 bg-paper p-5">
-          <div className="flex gap-3 mb-4">
+          {/* 종류 선택 */}
+          <div className="mb-4 flex gap-3">
             {(["testimony", "prayer_request"] as TestimonyKind[]).map((k) => (
-              <label key={k} className={`flex-1 cursor-pointer flex items-center justify-center rounded-md border-2 py-2 text-body-sm font-medium transition ${formKind === k ? "border-ink bg-ink text-paper" : "border-ink/20 text-ink-soft"}`}>
+              <label
+                key={k}
+                className={`flex flex-1 cursor-pointer items-center justify-center rounded-md border-2 py-2 text-body-sm font-medium transition ${
+                  formKind === k ? "border-ink bg-ink text-paper" : "border-ink/20 text-ink-soft hover:border-ink/40 hover:text-ink"
+                }`}
+              >
                 <input type="radio" className="sr-only" checked={formKind === k} onChange={() => setFormKind(k)} />
                 {KIND_LABEL[k]}
               </label>
             ))}
           </div>
+
+          {/* 내용 */}
           <textarea
             value={formContent}
             onChange={(e) => setFormContent(e.target.value)}
@@ -430,13 +467,55 @@ export default function TestimoniesPage() {
             rows={5}
             className="block w-full resize-none border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
           />
+
+          {/* 공개 범위 */}
+          <div className="mt-4">
+            <p className="mb-2 text-body-sm font-medium text-ink-soft">공개 범위</p>
+            <div className="grid grid-cols-3 gap-2">
+              {VIS_OPTIONS.map((v) => (
+                <label
+                  key={v.value}
+                  className={`flex cursor-pointer flex-col items-center rounded-md border-2 px-2 py-2.5 text-center transition ${
+                    formVisibility === v.value
+                      ? "border-ink bg-ink/5"
+                      : "border-ink/15 hover:border-ink/30"
+                  }`}
+                >
+                  <input type="radio" className="sr-only" checked={formVisibility === v.value} onChange={() => setFormVisibility(v.value)} />
+                  <span className={`text-body-sm font-medium ${formVisibility === v.value ? "text-ink" : "text-ink-soft"}`}>
+                    {v.label}
+                  </span>
+                  <span className="mt-0.5 text-caption text-ink-mute">{v.desc}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 이름 (익명이 아닐 때만) */}
+          {formVisibility !== "anonymous" && (
+            <div className="mt-3">
+              <input
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="이름 (선택, 비워두면 표시 안 됨)"
+                className="w-full rounded-md border border-ink/20 bg-transparent px-3 py-2 text-body-sm text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
+              />
+            </div>
+          )}
+
           <div className="mt-4 flex gap-2">
-            <button type="submit" disabled={!formContent.trim() || busy}
-              className="inline-flex h-9 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:bg-ink/90 disabled:opacity-40">
+            <button
+              type="submit"
+              disabled={!formContent.trim() || busy}
+              className="inline-flex h-9 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:bg-ink/90 disabled:opacity-40"
+            >
               {busy ? "저장 중…" : "저장"}
             </button>
-            <button type="button" onClick={() => setWriting(false)}
-              className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep">
+            <button
+              type="button"
+              onClick={() => { setWriting(false); setFormContent(""); setFormName(""); setFormVisibility("team"); }}
+              className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep"
+            >
               취소
             </button>
           </div>
@@ -445,15 +524,23 @@ export default function TestimoniesPage() {
 
       {/* 필터 탭 */}
       <div className="mb-4 flex gap-1 border-b border-ink/10 pb-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setFilter(tab.value)}
-            className={`rounded-sm px-3 py-1.5 text-body-sm font-medium transition ${filter === tab.value ? "bg-ink text-paper" : "text-ink-soft hover:text-ink"}`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const count = tab.value === "all" ? testimonies.length : kindCounts[tab.value as TestimonyKind];
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setFilter(tab.value)}
+              className={`rounded-sm px-3 py-1.5 text-body-sm font-medium transition ${filter === tab.value ? "bg-ink text-paper" : "text-ink-soft hover:text-ink"}`}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span className={`ml-1.5 text-caption ${filter === tab.value ? "opacity-60" : "text-ink-mute"}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* 목록 */}
@@ -461,14 +548,16 @@ export default function TestimoniesPage() {
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-24 animate-pulse rounded-md bg-paper-deep" />)}
         </div>
-      ) : testimonies.length === 0 ? (
+      ) : displayed.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-body text-ink-mute">아직 {filter === "all" ? "간증이나 기도제목이" : KIND_LABEL[filter as TestimonyKind] + "이"} 없어요.</p>
+          <p className="text-body text-ink-mute">
+            아직 {filter === "all" ? "간증이나 기도제목이" : KIND_LABEL[filter as TestimonyKind] + "이"} 없어요.
+          </p>
           <p className="mt-2 text-body-sm text-ink-mute">QR 코드를 인쇄해 현장에 붙이거나 직접 작성해보세요.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {testimonies.map((t) => (
+          {displayed.map((t) => (
             <TestimonyCard
               key={t.id}
               t={t}
