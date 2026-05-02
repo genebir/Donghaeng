@@ -184,6 +184,18 @@ export default function MembersPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
+        setHighlightedIdx(-1);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -398,7 +410,7 @@ export default function MembersPage() {
           <h2 className="mb-4 text-h3 font-medium">멤버 추가</h2>
           <form onSubmit={handleAdd} className="flex flex-col gap-4">
             {/* 유저 검색 */}
-            <div className="relative">
+            <div className="relative" ref={searchContainerRef}>
               {selectedUser ? (
                 <div className="flex items-center gap-2 rounded-md border border-ink/30 bg-paper px-4 py-2.5">
                   <span className="flex-1 text-body text-ink font-medium">{selectedUser.name}</span>

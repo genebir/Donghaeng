@@ -274,6 +274,20 @@ export function MobileTabbar() {
               </button>
             </div>
 
+            {/* 대시보드 바로가기 */}
+            <div className="px-4 pb-2">
+              <Link
+                href="/dashboard"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl bg-paper-deep px-4 py-3 text-body-sm font-medium text-ink-soft hover:bg-ink/10 active:bg-ink/15 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M13 8H3M6 5L3 8l3 3" />
+                </svg>
+                대시보드로
+              </Link>
+            </div>
+
             {/* 드로어 그룹 */}
             <div className="px-4 pb-8 flex flex-col gap-5">
               {drawerGroups.map((group) => (

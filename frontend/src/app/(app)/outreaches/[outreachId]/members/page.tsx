@@ -49,6 +49,18 @@ export default function OutreachMembersPage() {
   const [addError, setAddError] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
+        setHighlightedIdx(-1);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -244,7 +256,7 @@ export default function OutreachMembersPage() {
             <label className="text-body-sm font-medium text-ink-soft">
               멤버 검색 <span className="text-coral">*</span>
             </label>
-            <div className="relative">
+            <div className="relative" ref={searchContainerRef}>
               {selectedUser ? (
                 <div className="flex items-center gap-2 rounded-md border border-ink/30 bg-paper px-4 py-2.5">
                   <span className="flex-1 text-body text-ink font-medium">{selectedUser.name}</span>
