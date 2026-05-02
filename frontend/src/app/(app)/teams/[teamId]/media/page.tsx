@@ -324,7 +324,6 @@ export default function MediaPage() {
           type="file"
           multiple
           accept="image/*,video/*"
-          capture="environment"
           onChange={onInputChange}
           className="sr-only"
         />
