@@ -10,6 +10,7 @@ interface Tab {
   label: string;
   exact?: boolean;
   icon: React.ReactNode;
+  isActiveCheck?: (pathname: string) => boolean;
 }
 
 function IconHome() {
@@ -217,7 +218,14 @@ function buildTeamTabs(teamId: string): Tab[] {
     { href: base,               label: "홈",     icon: <IconHome />,     exact: true },
     { href: `${base}/schedule`, label: "일정",   icon: <IconCalendar /> },
     { href: `${base}/checklist`,label: "준비물", icon: <IconChecklist /> },
-    { href: `${base}/expenses`, label: "지출",   icon: <IconReceipt /> },
+    {
+      href: `${base}/expenses`,
+      label: "지출",
+      icon: <IconReceipt />,
+      isActiveCheck: (p) =>
+        p === `${base}/expenses` ||
+        (p.startsWith(`${base}/expenses/`) && !p.startsWith(`${base}/expenses/review`)),
+    },
     { href: `${base}/media`,    label: "미디어", icon: <IconCamera /> },
   ];
 }
@@ -230,6 +238,10 @@ export function MobileTabbar() {
 
   const tabs = teamId ? buildTeamTabs(teamId) : DASHBOARD_TABS;
   const drawerGroups = teamId ? buildDrawerGroups(teamId) : [];
+
+  const isInDrawer = drawerGroups
+    .flatMap((g) => g.items)
+    .some((item) => pathname === item.href || pathname.startsWith(item.href + "/"));
 
   return (
     <>
@@ -290,9 +302,11 @@ export function MobileTabbar() {
       {/* 탭바 */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center border-t border-ink/10 bg-paper pb-safe md:hidden">
         {tabs.map((tab) => {
-          const isActive = tab.exact
-            ? pathname === tab.href
-            : pathname === tab.href || pathname.startsWith(tab.href + "/");
+          const isActive = tab.isActiveCheck
+            ? tab.isActiveCheck(pathname)
+            : tab.exact
+              ? pathname === tab.href
+              : pathname === tab.href || pathname.startsWith(tab.href + "/");
           return (
             <Link
               key={tab.href}
@@ -314,7 +328,7 @@ export function MobileTabbar() {
             onClick={() => setDrawerOpen(true)}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2",
-              drawerOpen ? "text-ink" : "text-ink-mute",
+              drawerOpen || isInDrawer ? "text-ink" : "text-ink-mute",
             )}
           >
             <IconMore />
