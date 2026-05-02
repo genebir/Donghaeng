@@ -409,9 +409,9 @@ export default function NewExpensePage() {
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !loading) {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                 e.preventDefault();
-                handleSubmit(e as unknown as React.FormEvent);
+                e.currentTarget.form?.requestSubmit();
               }
             }}
             rows={2}

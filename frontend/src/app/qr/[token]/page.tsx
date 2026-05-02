@@ -187,9 +187,9 @@ export default function QrFormPage() {
                 maxLength={5000}
                 autoFocus
                 onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && content.trim() && state !== "submitting") {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                     e.preventDefault();
-                    handleSubmit(e as unknown as React.FormEvent);
+                    e.currentTarget.form?.requestSubmit();
                   }
                 }}
                 className="resize-none rounded-md border-2 border-ink/20 bg-transparent px-4 py-3 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"

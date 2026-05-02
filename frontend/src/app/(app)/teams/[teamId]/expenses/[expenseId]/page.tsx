@@ -184,9 +184,9 @@ function EditForm({ expense, onSave, onCancel }: EditFormProps) {
         <textarea name="notes" value={form.notes} onChange={handleChange} rows={2}
           placeholder="추가 설명 (선택)" className={inputClass + " resize-none"}
           onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !saving) {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
               e.preventDefault();
-              handleSubmit(e as unknown as React.FormEvent);
+              e.currentTarget.form?.requestSubmit();
             }
           }} />
       </div>
