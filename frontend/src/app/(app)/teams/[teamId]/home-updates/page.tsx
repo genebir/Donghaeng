@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { HomeUpdatePublic, HomeUpdateStatus } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 const STATUS_LABEL: Record<HomeUpdateStatus, string> = {
   draft: "초안", published: "발행됨",
@@ -105,6 +106,7 @@ function WriteForm({
 
 export default function HomeUpdatesPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin } = useTeamRole();
   const [updates, setUpdates] = useState<HomeUpdatePublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [writing, setWriting] = useState(false);
@@ -264,7 +266,7 @@ export default function HomeUpdatesPage() {
           <p className="text-overline uppercase tracking-overline text-ink-mute">본진 공유</p>
           <h1 className="font-display mt-1 text-h1">소식<span className="text-coral">.</span></h1>
         </div>
-        {!writing && !editing && (
+        {isAdmin && !writing && !editing && (
           <button onClick={() => setWriting(true)}
             className="inline-flex h-9 flex-shrink-0 items-center rounded-md bg-ink px-4 text-body-sm font-medium text-paper hover:bg-ink/90 active:translate-y-px transition">
             + 새 소식
@@ -333,32 +335,34 @@ export default function HomeUpdatesPage() {
                       </button>
                     )}
                   </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {u.status === "draft" && (
-                      <button onClick={() => handlePublish(u)} disabled={busy}
-                        className="inline-flex h-8 items-center rounded-md bg-coral px-3 text-body-sm text-paper hover:bg-coral/90 disabled:opacity-50">
-                        본진에 발행
+                  {isAdmin && (
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      {u.status === "draft" && (
+                        <button onClick={() => handlePublish(u)} disabled={busy}
+                          className="inline-flex h-8 items-center rounded-md bg-coral px-3 text-body-sm text-paper hover:bg-coral/90 disabled:opacity-50">
+                          본진에 발행
+                        </button>
+                      )}
+                      <button onClick={() => { setWriting(false); setEditing(u); }}
+                        className="inline-flex h-8 items-center rounded-md border border-ink/20 px-3 text-body-sm text-ink hover:bg-paper-deep">
+                        수정
                       </button>
-                    )}
-                    <button onClick={() => { setWriting(false); setEditing(u); }}
-                      className="inline-flex h-8 items-center rounded-md border border-ink/20 px-3 text-body-sm text-ink hover:bg-paper-deep">
-                      수정
-                    </button>
-                    {confirmDeleteId === u.id ? (
-                      <div className="flex items-center gap-2 rounded-md border border-rust/30 bg-rust/5 px-3 py-1">
-                        <span className="text-body-sm text-rust">삭제할까요?</span>
-                        <button onClick={() => handleDelete(u.id)}
-                          className="text-body-sm font-medium text-rust hover:underline">삭제</button>
-                        <button onClick={() => setConfirmDeleteId(null)}
-                          className="text-body-sm text-ink-mute hover:text-ink">취소</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setConfirmDeleteId(u.id)}
-                        className="inline-flex h-8 items-center rounded-md px-3 text-body-sm text-ink-mute hover:text-rust transition-colors">
-                        삭제
-                      </button>
-                    )}
-                  </div>
+                      {confirmDeleteId === u.id ? (
+                        <div className="flex items-center gap-2 rounded-md border border-rust/30 bg-rust/5 px-3 py-1">
+                          <span className="text-body-sm text-rust">삭제할까요?</span>
+                          <button onClick={() => handleDelete(u.id)}
+                            className="text-body-sm font-medium text-rust hover:underline">삭제</button>
+                          <button onClick={() => setConfirmDeleteId(null)}
+                            className="text-body-sm text-ink-mute hover:text-ink">취소</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteId(u.id)}
+                          className="inline-flex h-8 items-center rounded-md px-3 text-body-sm text-ink-mute hover:text-rust transition-colors">
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </article>
