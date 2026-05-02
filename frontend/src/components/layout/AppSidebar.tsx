@@ -9,6 +9,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   exact?: boolean;
+  isActiveCheck?: (pathname: string) => boolean;
 }
 
 // ── 아이콘 ──────────────────────────────────────────────────────────────────
@@ -209,9 +210,11 @@ function NavGroupSection({
           key={item.href}
           item={item}
           isActive={
-            item.exact
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(item.href + "/")
+            item.isActiveCheck
+              ? item.isActiveCheck(pathname)
+              : item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(item.href + "/")
           }
         />
       ))}
@@ -269,7 +272,15 @@ function buildTeamNavGroups(teamId: string): NavGroup[] {
     {
       label: "회계",
       items: [
-        { href: `${base}/expenses`,        label: "지출",     icon: <IconReceipt /> },
+        {
+          href: `${base}/expenses`,
+          label: "지출",
+          icon: <IconReceipt />,
+          // expenses/review is a sibling section — don't highlight "지출" when there
+          isActiveCheck: (p) =>
+            p === `${base}/expenses` ||
+            (p.startsWith(`${base}/expenses/`) && !p.startsWith(`${base}/expenses/review`)),
+        },
         { href: `${base}/expenses/review`, label: "지출 검토", icon: <IconClipboardCheck /> },
         { href: `${base}/budget`,          label: "예산",     icon: <IconWallet /> },
         { href: `${base}/reimbursements`,  label: "정산",     icon: <IconSend /> },
