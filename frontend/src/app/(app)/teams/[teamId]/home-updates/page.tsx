@@ -37,9 +37,8 @@ function WriteForm({
     return () => window.removeEventListener("keydown", handler);
   }, [onCancel]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+  const doSave = async () => {
+    if (!title.trim() || !content.trim() || busy !== null) return;
     setBusy("save");
     await onSave(title.trim(), content.trim());
     setBusy(null);
@@ -55,7 +54,7 @@ function WriteForm({
   const disabled = !title.trim() || !content.trim() || busy !== null;
 
   return (
-    <form onSubmit={handleSave} className="rounded-md border border-ink/15 bg-paper p-5">
+    <form onSubmit={(e) => { e.preventDefault(); doSave(); }} className="rounded-md border border-ink/15 bg-paper p-5">
       <label className="block">
         <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">제목</span>
         <input
@@ -74,7 +73,7 @@ function WriteForm({
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !disabled) {
               e.preventDefault();
-              handleSave(e as unknown as React.FormEvent);
+              doSave();
             }
           }}
           className="mt-2 block w-full resize-none border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"

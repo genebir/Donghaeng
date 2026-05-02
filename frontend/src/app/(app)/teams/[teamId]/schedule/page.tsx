@@ -97,8 +97,13 @@ function ScheduleForm({
   const set = (key: keyof FormState, val: string) =>
     setForm((prev) => ({ ...prev, [key]: val }));
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.title.trim() && form.starts_at && !saving) onSave(form);
+  };
+
   return (
-    <div className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <input
         ref={titleRef}
         value={form.title}
@@ -171,9 +176,9 @@ function ScheduleForm({
         value={form.description}
         onChange={(e) => set("description", e.target.value)}
         onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && form.title.trim() && form.starts_at && !saving) {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
             e.preventDefault();
-            onSave(form);
+            if (form.title.trim() && form.starts_at && !saving) onSave(form);
           }
         }}
         placeholder="메모 (선택)"
@@ -183,20 +188,21 @@ function ScheduleForm({
 
       <div className="flex gap-2 pt-1">
         <button
-          onClick={() => onSave(form)}
+          type="submit"
           disabled={!form.title.trim() || !form.starts_at || saving}
           className="h-9 rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80 disabled:opacity-40"
         >
           {saving ? "저장 중…" : "저장"}
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="h-9 rounded-md border border-ink/20 px-4 text-body-sm text-ink-soft hover:bg-paper-deep"
         >
           취소
         </button>
       </div>
-    </div>
+    </form>
   );
 }
 

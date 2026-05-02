@@ -399,6 +399,14 @@ export default function ChecklistPage() {
           )}
         </div>
         {total > 0 && <div className="mt-4"><ProgressBar done={done} total={total} /></div>}
+        {total > 0 && done === total && (
+          <div className="mt-3 flex items-center gap-2 rounded-md bg-sage/10 px-4 py-2.5 text-body-sm text-sage">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M2 7l3.5 3.5L12 3" />
+            </svg>
+            모든 준비가 완료됐어요!
+          </div>
+        )}
       </header>
 
       {loading ? (
