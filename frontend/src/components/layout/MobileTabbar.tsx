@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
 interface Tab {
@@ -238,6 +238,13 @@ export function MobileTabbar() {
 
   const tabs = teamId ? buildTeamTabs(teamId) : DASHBOARD_TABS;
   const drawerGroups = teamId ? buildDrawerGroups(teamId) : [];
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [drawerOpen]);
 
   const isInDrawer = drawerGroups
     .flatMap((g) => g.items)
