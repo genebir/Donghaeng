@@ -416,7 +416,7 @@ export default function MediaPage() {
         <div>
           <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">팀 사진</p>
           <h1 className="font-display mt-1 text-h1">
-            미디어
+            미디어<span className="text-coral">.</span>
             {assets.length > 0 && (
               <span className="ml-2 text-h2 font-normal text-ink-mute">{assets.length}</span>
             )}

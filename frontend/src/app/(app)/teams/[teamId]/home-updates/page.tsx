@@ -262,7 +262,7 @@ export default function HomeUpdatesPage() {
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">본진 공유</p>
-          <h1 className="font-display mt-1 text-h1">소식</h1>
+          <h1 className="font-display mt-1 text-h1">소식<span className="text-coral">.</span></h1>
         </div>
         {!writing && !editing && (
           <button onClick={() => setWriting(true)}

@@ -94,7 +94,7 @@ export default function ReportsPage() {
 
       <header className="mb-8">
         <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">회계</p>
-        <h1 className="font-display mt-1 text-h1">리포트</h1>
+        <h1 className="font-display mt-1 text-h1">리포트<span className="text-coral">.</span></h1>
       </header>
 
       <div className="flex flex-col gap-4">

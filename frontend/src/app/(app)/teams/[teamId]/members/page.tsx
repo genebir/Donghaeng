@@ -362,7 +362,8 @@ export default function MembersPage() {
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
           <h1 className="font-display mt-1 text-h1">
-            멤버 <span className="text-ink-mute text-h2">({members.length}명)</span>
+            멤버<span className="text-coral">.</span>
+            <span className="ml-2 text-h2 font-normal text-ink-mute">{members.length}명</span>
           </h1>
         </div>
       </header>

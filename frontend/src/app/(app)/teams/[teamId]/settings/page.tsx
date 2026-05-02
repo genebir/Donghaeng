@@ -176,7 +176,7 @@ export default function TeamSettingsPage() {
 
       <header className="mb-8">
         <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
-        <h1 className="font-display mt-1 text-h1">설정</h1>
+        <h1 className="font-display mt-1 text-h1">설정<span className="text-coral">.</span></h1>
       </header>
 
       {/* 팀 기본 정보 */}

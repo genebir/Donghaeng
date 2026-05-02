@@ -427,7 +427,7 @@ export default function TestimoniesPage() {
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="tracking-overline uppercase text-overline text-ink-mute">간증 · 기도제목</p>
-          <h1 className="font-display mt-1 text-h1">간증</h1>
+          <h1 className="font-display mt-1 text-h1">간증<span className="text-coral">.</span></h1>
         </div>
         <div className="flex gap-2">
           <button

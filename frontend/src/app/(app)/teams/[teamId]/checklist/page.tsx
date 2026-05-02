@@ -385,7 +385,7 @@ export default function ChecklistPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">팀</p>
-            <h1 className="font-display mt-1 text-h1">준비물</h1>
+            <h1 className="font-display mt-1 text-h1">준비물<span className="text-coral">.</span></h1>
           </div>
           {done > 0 && (
             <button

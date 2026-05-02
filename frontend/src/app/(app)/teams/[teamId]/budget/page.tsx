@@ -332,7 +332,7 @@ export default function BudgetPage() {
       <header className="mb-8 flex items-center justify-between">
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
-          <h1 className="font-display mt-1 text-h1">예산</h1>
+          <h1 className="font-display mt-1 text-h1">예산<span className="text-coral">.</span></h1>
         </div>
         {isAdmin && (
           <button

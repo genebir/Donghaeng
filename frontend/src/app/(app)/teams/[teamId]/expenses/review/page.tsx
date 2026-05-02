@@ -189,7 +189,7 @@ export default function ExpenseReviewPage() {
 
       <header className="mb-6">
         <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">회계</p>
-        <h1 className="font-display mt-1 text-h1">지출 검토</h1>
+        <h1 className="font-display mt-1 text-h1">지출 검토<span className="text-coral">.</span></h1>
       </header>
 
       {/* 탭 */}

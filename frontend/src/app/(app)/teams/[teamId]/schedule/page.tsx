@@ -483,7 +483,7 @@ export default function SchedulePage() {
       <header className="mb-8 flex items-center justify-between">
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
-          <h1 className="font-display mt-1 text-h1">일정</h1>
+          <h1 className="font-display mt-1 text-h1">일정<span className="text-coral">.</span></h1>
         </div>
         <div className="flex items-center gap-2">
           {upcomingGroups.some((g) => g.key === today) && (

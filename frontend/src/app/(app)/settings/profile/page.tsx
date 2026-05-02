@@ -171,7 +171,7 @@ export default function ProfileSettingsPage() {
 
       <header className="mb-8">
         <p className="tracking-overline text-overline uppercase text-ink-mute">설정</p>
-        <h1 className="font-display mt-1 text-h1">프로필</h1>
+        <h1 className="font-display mt-1 text-h1">프로필<span className="text-coral">.</span></h1>
       </header>
 
       {loading ? (

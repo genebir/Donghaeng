@@ -203,7 +203,7 @@ export default function ExpensesPage() {
       <header className="mb-6 flex items-center justify-between">
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
-          <h1 className="font-display mt-1 text-h1">지출</h1>
+          <h1 className="font-display mt-1 text-h1">지출<span className="text-coral">.</span></h1>
         </div>
         <Link
           href={`/teams/${teamId}/expenses/new`}

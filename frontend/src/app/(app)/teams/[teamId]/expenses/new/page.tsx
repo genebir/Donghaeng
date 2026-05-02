@@ -266,7 +266,7 @@ export default function NewExpensePage() {
           </svg>
           지출 목록
         </Link>
-        <h1 className="font-display text-h1">지출 등록</h1>
+        <h1 className="font-display text-h1">지출 등록<span className="text-coral">.</span></h1>
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
