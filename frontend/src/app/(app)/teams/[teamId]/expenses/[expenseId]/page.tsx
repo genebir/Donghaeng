@@ -231,7 +231,13 @@ function RejectModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (
         <p className="mb-4 text-body-sm text-ink-mute">등록자에게 표시됩니다.</p>
         <textarea className="w-full resize-none rounded-md border border-ink/20 bg-paper p-3 text-body focus:border-ink focus:outline-none"
           rows={3} placeholder="영수증 사진이 흐림. 재촬영 부탁드려요."
-          value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
+          value={reason} onChange={(e) => setReason(e.target.value)} autoFocus
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && reason.trim()) {
+              e.preventDefault();
+              onConfirm(reason.trim());
+            }
+          }} />
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose}
             className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep">취소</button>
