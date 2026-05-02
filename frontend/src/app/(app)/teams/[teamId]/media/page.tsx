@@ -25,6 +25,23 @@ function IconImage() {
   );
 }
 
+function IconPlay() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M6.5 4.5l9 5.5-9 5.5V4.5z" />
+    </svg>
+  );
+}
+
+function IconDownload() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7 2v7M4 6.5l3 3 3-3" />
+      <path d="M2 11h10" />
+    </svg>
+  );
+}
+
 function IconClose() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
@@ -66,13 +83,14 @@ function PhotoCard({
   onSelect: (a: MediaAssetPublic) => void;
   onDelete: (id: string) => void;
 }) {
+  const isVid = asset.kind === "video" || asset.content_type.startsWith("video/");
   return (
     <div className="group relative aspect-square w-full overflow-hidden rounded-sm bg-paper-deep">
       <button
         onClick={() => onSelect(asset)}
         className="h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/40"
       >
-        {asset.view_url ? (
+        {asset.view_url && !isVid ? (
           <img
             src={asset.view_url}
             alt={asset.filename}
@@ -80,8 +98,22 @@ function PhotoCard({
             className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-ink-mute">
-            <IconImage />
+          <div className="flex h-full w-full items-center justify-center text-ink-mute bg-paper-deep">
+            {isVid ? (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/15 text-ink-soft group-hover:bg-ink/25 transition-colors">
+                <IconPlay />
+              </div>
+            ) : (
+              <IconImage />
+            )}
+          </div>
+        )}
+        {/* 비디오 오버레이 — 썸네일이 있는 경우 */}
+        {isVid && asset.view_url && (
+          <div className="absolute inset-0 flex items-center justify-center bg-ink/25 transition-colors group-hover:bg-ink/35">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/70 text-paper">
+              <IconPlay />
+            </div>
           </div>
         )}
       </button>
@@ -104,9 +136,18 @@ function PhotoCard({
 // ── 업로드 중 카드 ────────────────────────────────────────────────────────
 
 function UploadCard({ item }: { item: UploadItem }) {
+  const isVid = item.file.type.startsWith("video/");
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-sm bg-paper-deep">
-      <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover opacity-60" />
+      {isVid ? (
+        <div className="flex h-full w-full items-center justify-center bg-paper-deep">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink/15 text-ink-soft">
+            <IconPlay />
+          </div>
+        </div>
+      ) : (
+        <img src={item.previewUrl} alt={item.file.name} className="h-full w-full object-cover opacity-60" />
+      )}
       <div className="absolute inset-0 flex items-center justify-center">
         {item.progress === "uploading" && (
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-paper border-t-transparent" />
@@ -149,15 +190,26 @@ function Lightbox({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose, onNavigate, assets, idx, hasPrev, hasNext]);
 
+  const isVid = asset.kind === "video" || asset.content_type.startsWith("video/");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4" onClick={onClose}>
       <div className="relative max-h-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
         {asset.view_url && (
-          <img
-            src={asset.view_url}
-            alt={asset.filename}
-            className="max-h-[80vh] max-w-full rounded-sm object-contain"
-          />
+          isVid ? (
+            <video
+              src={asset.view_url}
+              controls
+              autoPlay
+              className="max-h-[80vh] max-w-full rounded-sm"
+            />
+          ) : (
+            <img
+              src={asset.view_url}
+              alt={asset.filename}
+              className="max-h-[80vh] max-w-full rounded-sm object-contain"
+            />
+          )
         )}
         <div className="mt-2 flex items-center gap-3">
           <p className="flex-1 text-caption text-paper/70 truncate">{asset.filename}</p>
@@ -167,6 +219,19 @@ function Lightbox({
           <p className="text-caption text-paper/50">{formatDate(asset.created_at)}</p>
           {assets.length > 1 && (
             <p className="text-caption text-paper/40">{idx + 1}/{assets.length}</p>
+          )}
+          {asset.view_url && (
+            <a
+              href={asset.view_url}
+              download={asset.filename}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title="다운로드"
+              className="text-paper/40 hover:text-paper transition-colors"
+            >
+              <IconDownload />
+            </a>
           )}
           {confirmDel ? (
             <div className="flex items-center gap-2">
