@@ -173,6 +173,10 @@ async def update_expense(
         )
     for key, value in fields.items():
         setattr(expense, key, value)
+    # 반려된 지출을 본인이 수정하면 재제출로 처리
+    if is_self and not is_admin and expense.status == ExpenseStatus.REJECTED:
+        expense.status = ExpenseStatus.PENDING
+        expense.rejection_reason = None
     await db.commit()
     await db.refresh(expense)
     return expense

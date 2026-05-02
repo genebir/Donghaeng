@@ -92,9 +92,10 @@ interface EditFormProps {
   expense: ExpensePublic;
   onSave: (patch: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
+  isResubmit?: boolean;
 }
 
-function EditForm({ expense, onSave, onCancel }: EditFormProps) {
+function EditForm({ expense, onSave, onCancel, isResubmit }: EditFormProps) {
   const [form, setForm] = useState({
     amount: parseFloat(expense.amount).toString(),
     description: expense.description,
@@ -198,7 +199,7 @@ function EditForm({ expense, onSave, onCancel }: EditFormProps) {
         </button>
         <button type="submit" disabled={saving}
           className="h-10 flex-1 rounded-md bg-ink text-body-sm font-medium text-paper hover:opacity-80 disabled:opacity-50">
-          {saving ? "저장 중…" : "수정 저장"}
+          {saving ? "저장 중…" : isResubmit ? "수정 및 재제출" : "수정 저장"}
         </button>
       </div>
     </form>
@@ -349,6 +350,7 @@ export default function ExpenseDetailPage() {
   const canReject = isAdmin && (expense?.status === "pending");
 
   const handleSaveEdit = async (patch: Record<string, unknown>) => {
+    const wasRejected = expense?.status === "rejected";
     try {
       const res = await fetch(`/api/expense/${expenseId}`, {
         method: "PATCH",
@@ -359,7 +361,7 @@ export default function ExpenseDetailPage() {
       if (!res.ok) { showToast(json.message ?? "수정 실패", false); return; }
       setExpense(json.data);
       setEditing(false);
-      showToast("수정됐어요.", true);
+      showToast(wasRejected ? "재제출됐어요. 검토를 기다리는 중이에요." : "수정됐어요.", true);
     } catch { showToast("잠깐 문제가 있었어요.", false); }
   };
 
@@ -478,8 +480,15 @@ export default function ExpenseDetailPage() {
       {/* 편집 폼 or 상세 */}
       {editing ? (
         <div className="rounded-md border border-ink/10 bg-paper p-5">
-          <h2 className="mb-4 text-h3 font-medium">지출 수정</h2>
-          <EditForm expense={expense} onSave={handleSaveEdit} onCancel={() => setEditing(false)} />
+          <h2 className="mb-4 text-h3 font-medium">
+            {expense.status === "rejected" ? "지출 수정 및 재제출" : "지출 수정"}
+          </h2>
+          <EditForm
+            expense={expense}
+            onSave={handleSaveEdit}
+            onCancel={() => setEditing(false)}
+            isResubmit={expense.status === "rejected"}
+          />
         </div>
       ) : (
         <>
