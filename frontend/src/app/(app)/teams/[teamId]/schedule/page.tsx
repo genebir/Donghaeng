@@ -236,7 +236,7 @@ function ScheduleRow({
             )}
           </div>
           {isAdmin && (
-            <div className="flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="flex flex-shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus-within:!opacity-100">
               {confirmDel ? (
                 <>
                   <span className="text-caption text-rust">삭제할까요?</span>
