@@ -241,6 +241,8 @@ export default function MembersPage() {
       if (!res.ok && res.status !== 204) {
         setMembers(backup);
         showToast("제거에 실패했어요.", false);
+      } else {
+        showToast("멤버를 제거했어요.", true);
       }
     } catch {
       setMembers(backup);
@@ -281,6 +283,7 @@ export default function MembersPage() {
       setAddRole("MEMBER");
       setAddPart("");
       await fetchMembers();
+      showToast("멤버를 추가했어요.", true);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "오류가 발생했어요.");
     } finally {

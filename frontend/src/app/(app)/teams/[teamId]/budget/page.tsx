@@ -125,6 +125,12 @@ function BudgetEditModal({
   const [amounts, setAmounts] = useState<Record<string, string>>(initAmounts);
   const [active, setActive] = useState<Set<ExpenseCategory>>(initActive);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   function toggleCategory(cat: ExpenseCategory) {
     setActive((prev) => {
       const next = new Set(prev);
