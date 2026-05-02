@@ -185,6 +185,13 @@ export default function QrFormPage() {
                 }
                 rows={6}
                 maxLength={5000}
+                autoFocus
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && content.trim() && state !== "submitting") {
+                    e.preventDefault();
+                    handleSubmit(e as unknown as React.FormEvent);
+                  }
+                }}
                 className="resize-none rounded-md border-2 border-ink/20 bg-transparent px-4 py-3 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
               />
               <p className="text-right text-caption text-ink-mute">{content.length} / 5000</p>
