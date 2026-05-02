@@ -260,13 +260,14 @@ export default function NewExpensePage() {
     <div className="mx-auto max-w-[520px]">
       <header className="mb-6">
         <Link href={`/teams/${teamId}/expenses`}
-          className="mb-4 flex items-center gap-1.5 text-body-sm text-ink-mute hover:text-ink">
+          className="mb-6 flex items-center gap-1.5 text-body-sm text-ink-mute hover:text-ink">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M11 7H3M6 4L3 7l3 3" />
           </svg>
           지출 목록
         </Link>
-        <h1 className="font-display text-h1">지출 등록<span className="text-coral">.</span></h1>
+        <p className="tracking-overline text-overline uppercase text-ink-mute">회계</p>
+        <h1 className="font-display mt-1 text-h1">지출 등록<span className="text-coral">.</span></h1>
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
