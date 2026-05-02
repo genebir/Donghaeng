@@ -430,12 +430,14 @@ export default function TestimoniesPage() {
           <h1 className="font-display mt-1 text-h1">간증<span className="text-coral">.</span></h1>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowQr((v) => !v)}
-            className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep transition"
-          >
-            QR 관리
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowQr((v) => !v)}
+              className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep transition"
+            >
+              QR 관리
+            </button>
+          )}
           {!writing && (
             <button
               onClick={() => setWriting(true)}
