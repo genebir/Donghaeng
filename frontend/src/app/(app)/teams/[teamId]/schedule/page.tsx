@@ -170,6 +170,12 @@ function ScheduleForm({
       <textarea
         value={form.description}
         onChange={(e) => set("description", e.target.value)}
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && form.title.trim() && form.starts_at && !saving) {
+            e.preventDefault();
+            onSave(form);
+          }
+        }}
         placeholder="메모 (선택)"
         rows={2}
         className="w-full resize-none rounded-md border border-ink/20 bg-paper px-4 py-2.5 text-body-sm text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"

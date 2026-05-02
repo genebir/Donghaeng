@@ -55,6 +55,13 @@ function MemberRow({
   const [isPartLead, setIsPartLead] = useState(member.is_part_lead);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!editing) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setEditing(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [editing]);
+
   async function save() {
     setSaving(true);
     const ok = await onUpdate(member.id, {
