@@ -76,6 +76,7 @@ function PhotoCard({
           <img
             src={asset.view_url}
             alt={asset.filename}
+            loading="lazy"
             className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
           />
         ) : (
