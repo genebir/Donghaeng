@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ReimbursementPublic, ReimbursementStatus, ExpenseCategory } from "@/types/api";
@@ -314,15 +315,16 @@ export default function ReimbursementDetailPage() {
         ) : (
           <div className="flex flex-col gap-1.5">
             {data.expenses.map((e) => (
-              <div key={e.id} className="flex items-center gap-3 rounded-md border border-ink/8 bg-paper px-4 py-2.5">
+              <Link key={e.id} href={`/teams/${teamId}/expenses/${e.id}`}
+                className="flex items-center gap-3 rounded-md border border-ink/8 bg-paper px-4 py-2.5 hover:border-ink/25 hover:bg-paper-deep transition-colors group">
                 <div className="min-w-0 flex-1">
-                  <p className="text-body-sm text-ink">{e.description}</p>
+                  <p className="text-body-sm text-ink group-hover:underline">{e.description}</p>
                   <p className="text-caption text-ink-mute">
                     {CATEGORY_LABEL[e.category]} · {e.vendor && `${e.vendor} · `}{formatDateTime(e.spent_at)}
                   </p>
                 </div>
                 <span className="font-mono text-body-sm tabular-nums text-ink flex-shrink-0">{formatKRW(e.amount)}</span>
-              </div>
+              </Link>
             ))}
           </div>
         )}
