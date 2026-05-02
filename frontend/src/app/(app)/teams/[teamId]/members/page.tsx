@@ -7,6 +7,16 @@ import { cn } from "@/lib/cn";
 type TeamRole = "LEADER" | "MEMBER";
 type TeamPart = "MEDIA" | "WORSHIP" | "TEACHER" | "FINANCE" | "MEDICAL" | "GENERAL";
 
+interface EmergencyInfo {
+  phone?: string;
+  blood_type?: string;
+  allergies?: string;
+  medical_conditions?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_relation?: string;
+}
+
 interface Member {
   id: string;
   team_id: string;
@@ -15,6 +25,7 @@ interface Member {
   part: TeamPart | null;
   is_part_lead: boolean;
   joined_at: string;
+  emergency_info: EmergencyInfo | null;
 }
 
 const PART_LABEL: Record<TeamPart, string> = {
@@ -27,6 +38,162 @@ const ROLE_STYLE: Record<TeamRole, string> = {
   LEADER: "bg-coral/10 text-coral",
   MEMBER: "bg-ink-mute/10 text-ink-mute",
 };
+
+const EMERGENCY_FIELDS: { key: keyof EmergencyInfo; label: string; placeholder: string }[] = [
+  { key: "phone",                      label: "본인 전화번호",      placeholder: "010-0000-0000" },
+  { key: "blood_type",                 label: "혈액형",             placeholder: "A+, B-, O+, AB+" },
+  { key: "allergies",                  label: "알레르기",            placeholder: "없으면 비워두세요" },
+  { key: "medical_conditions",         label: "지병 / 복용약",       placeholder: "없으면 비워두세요" },
+  { key: "emergency_contact_name",     label: "비상연락인 이름",     placeholder: "어머니, 아버지…" },
+  { key: "emergency_contact_phone",    label: "비상연락인 전화번호", placeholder: "010-0000-0000" },
+  { key: "emergency_contact_relation", label: "비상연락인 관계",     placeholder: "어머니, 배우자…" },
+];
+
+function EmergencyModal({
+  member,
+  canEdit,
+  currentUserId,
+  onClose,
+  onSaved,
+}: {
+  member: Member;
+  canEdit: boolean;
+  currentUserId: string | null;
+  onClose: () => void;
+  onSaved: (id: string, info: EmergencyInfo) => void;
+}) {
+  const info = member.emergency_info ?? {};
+  const [form, setForm] = useState<EmergencyInfo>(
+    Object.fromEntries(
+      EMERGENCY_FIELDS.map(({ key }) => [key, info[key] ?? ""])
+    ) as EmergencyInfo
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canEditThis = canEdit || currentUserId === member.user.id;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    const cleaned = Object.fromEntries(
+      Object.entries(form).filter(([, v]) => String(v ?? "").trim() !== "")
+    ) as EmergencyInfo;
+    try {
+      const res = await fetch(`/api/team-members/${member.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emergency_info: cleaned }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? "저장에 실패했어요.");
+      onSaved(member.id, cleaned);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "오류가 발생했어요.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const hasInfo = EMERGENCY_FIELDS.some(({ key }) => info[key]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center bg-ink/40" onClick={onClose}>
+      <div className="w-full max-w-md rounded-xl border border-ink/10 bg-paper shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-ink/10 px-5 py-4">
+          <div>
+            <p className="text-body-sm font-medium text-ink">{member.user.name}</p>
+            <p className="text-caption text-ink-mute">응급 정보</p>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1.5 text-ink-mute hover:bg-paper-deep">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+              <path d="M2 2l10 10M12 2L2 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="max-h-[72vh] overflow-y-auto p-5">
+          {canEditThis ? (
+            <form onSubmit={handleSave} className="flex flex-col gap-4">
+              {EMERGENCY_FIELDS.map(({ key, label, placeholder }) => (
+                <label key={key} className="flex flex-col gap-1.5">
+                  <span className="text-caption font-semibold uppercase tracking-overline text-ink-mute">{label}</span>
+                  <input
+                    value={form[key] ?? ""}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="rounded-md border border-ink/20 bg-paper px-3 py-2 text-body-sm text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
+                  />
+                </label>
+              ))}
+              {error && <p className="text-body-sm text-rust">{error}</p>}
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={onClose}
+                  className="flex-1 h-9 rounded-md border border-ink/20 text-body-sm text-ink hover:bg-paper-deep">
+                  취소
+                </button>
+                <button type="submit" disabled={saving}
+                  className="flex-1 h-9 rounded-md bg-ink text-body-sm font-medium text-paper hover:opacity-80 disabled:opacity-50">
+                  {saving ? "저장 중…" : "저장"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <dl className="flex flex-col gap-3">
+              {hasInfo ? (
+                EMERGENCY_FIELDS.map(({ key, label }) => {
+                  const val = info[key];
+                  if (!val) return null;
+                  return (
+                    <div key={key}>
+                      <dt className="text-caption uppercase tracking-overline font-semibold text-ink-mute">{label}</dt>
+                      <dd className="mt-0.5 text-body-sm text-ink">{val}</dd>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-body-sm text-ink-mute">응급 정보가 없습니다.</p>
+              )}
+            </dl>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function downloadEmergencyCSV(members: Member[]) {
+  const headers = ["이름", "이메일", "파트", "전화번호", "혈액형", "알레르기", "지병/복용약", "비상연락인", "비상연락 전화", "관계"];
+  const rows = members.map((m) => {
+    const info = m.emergency_info ?? {};
+    return [
+      m.user.name,
+      m.user.email.includes("@noemail.local") ? "" : m.user.email,
+      m.part ? PART_LABEL[m.part] : "",
+      info.phone ?? "",
+      info.blood_type ?? "",
+      info.allergies ?? "",
+      info.medical_conditions ?? "",
+      info.emergency_contact_name ?? "",
+      info.emergency_contact_phone ?? "",
+      info.emergency_contact_relation ?? "",
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
+  });
+  const csv = [headers.map((h) => `"${h}"`).join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "비상연락망.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function Avatar({ name, imageUrl }: { name: string; imageUrl: string | null }) {
   if (imageUrl) return <img src={imageUrl} alt={name} className="h-10 w-10 flex-shrink-0 rounded-full object-cover" />;
@@ -42,11 +209,13 @@ function MemberRow({
   isAdmin,
   onUpdate,
   onRemove,
+  onEmergency,
 }: {
   member: Member;
   isAdmin: boolean;
   onUpdate: (id: string, patch: Partial<{ role: TeamRole; part: TeamPart | null; is_part_lead: boolean }>) => Promise<boolean>;
   onRemove: (id: string) => void;
+  onEmergency: (member: Member) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -92,28 +261,42 @@ function MemberRow({
           </span>
           {member.part && <span className="text-caption text-ink-mute">{PART_LABEL[member.part]}</span>}
         </div>
-        {isAdmin && (
-          <div className="flex flex-shrink-0 items-center gap-2 ml-2">
-            <button onClick={() => { setEditing((v) => !v); setConfirmRemove(false); }}
-              className="text-body-sm text-ink-mute hover:text-ink">
-              {editing ? "닫기" : "편집"}
-            </button>
-            {confirmRemove ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-body-sm text-rust">정말요?</span>
-                <button onClick={() => onRemove(member.id)}
-                  className="text-body-sm font-semibold text-rust hover:underline">제거</button>
-                <button onClick={() => setConfirmRemove(false)}
-                  className="text-body-sm text-ink-mute hover:text-ink">취소</button>
-              </div>
-            ) : (
-              <button onClick={() => setConfirmRemove(true)}
-                className="text-body-sm text-ink-mute hover:text-rust transition-colors">
-                제거
+        <div className="flex flex-shrink-0 items-center gap-2 ml-2">
+          {/* 응급 정보 버튼 — 항상 표시 (본인 or 관리자) */}
+          <button
+            onClick={() => onEmergency(member)}
+            title="응급 정보"
+            className={`rounded px-2 py-1 text-caption transition-colors ${
+              member.emergency_info && Object.values(member.emergency_info).some(Boolean)
+                ? "text-rust hover:bg-rust/10"
+                : "text-ink-mute hover:bg-paper-deep hover:text-ink"
+            }`}
+          >
+            응급
+          </button>
+          {isAdmin && (
+            <>
+              <button onClick={() => { setEditing((v) => !v); setConfirmRemove(false); }}
+                className="text-body-sm text-ink-mute hover:text-ink">
+                {editing ? "닫기" : "편집"}
               </button>
-            )}
-          </div>
-        )}
+              {confirmRemove ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-body-sm text-rust">정말요?</span>
+                  <button onClick={() => onRemove(member.id)}
+                    className="text-body-sm font-semibold text-rust hover:underline">제거</button>
+                  <button onClick={() => setConfirmRemove(false)}
+                    className="text-body-sm text-ink-mute hover:text-ink">취소</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmRemove(true)}
+                  className="text-body-sm text-ink-mute hover:text-rust transition-colors">
+                  제거
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {editing && (
@@ -166,8 +349,10 @@ export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [emergencyMember, setEmergencyMember] = useState<Member | null>(null);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -221,6 +406,7 @@ export default function MembersPage() {
         (m: Member) => m.user.id === myData?.id && m.role === "LEADER"
       );
       setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
+      setCurrentUserId(myData?.id ?? null);
     } catch {
       setError("멤버 목록을 불러오지 못했어요.");
     } finally {
@@ -358,6 +544,19 @@ export default function MembersPage() {
           {toast.msg}
         </div>
       )}
+      {emergencyMember && (
+        <EmergencyModal
+          member={emergencyMember}
+          canEdit={isAdmin}
+          currentUserId={currentUserId}
+          onClose={() => setEmergencyMember(null)}
+          onSaved={(id, info) => {
+            setMembers((prev) => prev.map((m) => m.id === id ? { ...m, emergency_info: info } : m));
+            showToast("응급 정보가 저장됐어요.", true);
+          }}
+        />
+      )}
+
       <header className="mb-8 flex items-center justify-between">
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
@@ -366,6 +565,18 @@ export default function MembersPage() {
             <span className="ml-2 text-h2 font-normal text-ink-mute">{members.length}명</span>
           </h1>
         </div>
+        {isAdmin && members.length > 0 && (
+          <button
+            onClick={() => downloadEmergencyCSV(members)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-ink/15 px-3 text-body-sm text-ink-mute hover:border-ink/30 hover:text-ink transition-colors"
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M6.5 1v8M3.5 6.5l3 3 3-3" />
+              <path d="M1 10.5h11" />
+            </svg>
+            비상연락망
+          </button>
+        )}
       </header>
 
       {error && (
@@ -396,6 +607,7 @@ export default function MembersPage() {
                       isAdmin={isAdmin}
                       onUpdate={handleUpdate}
                       onRemove={handleRemove}
+                      onEmergency={setEmergencyMember}
                     />
                   ))}
                 </ul>
