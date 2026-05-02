@@ -159,10 +159,11 @@ export default async function TeamHomePage({ params }: Props) {
     throw e;
   }
 
-  // 오늘 기준 앞으로 3개 일정
-  const nowIso = new Date().toISOString();
+  // 오늘 자정부터의 일정 (진행 중인 항목 포함)
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
   const [scheduleItems, checklistItems, expenseItems] = await Promise.allSettled([
-    fetchApi<ScheduleItem[]>(`/teams/${teamId}/schedule?from=${encodeURIComponent(nowIso)}`, token),
+    fetchApi<ScheduleItem[]>(`/teams/${teamId}/schedule?from=${encodeURIComponent(todayStart.toISOString())}`, token),
     fetchApi<ChecklistItem[]>(`/teams/${teamId}/checklist`, token),
     fetchApi<ExpenseItem[]>(`/teams/${teamId}/expenses`, token),
   ]);
