@@ -140,7 +140,7 @@ export default function QrFormPage() {
 
             {/* 종류 선택 */}
             <fieldset>
-              <legend className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">
+              <legend className="text-caption font-semibold uppercase tracking-overline text-ink-soft">
                 종류
               </legend>
               <div className="mt-3 flex gap-3">
@@ -172,7 +172,7 @@ export default function QrFormPage() {
 
             {/* 내용 */}
             <label className="flex flex-col gap-2">
-              <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">
+              <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">
                 {kind === "prayer_request" ? "기도제목" : "간증"}
               </span>
               <textarea
@@ -199,7 +199,7 @@ export default function QrFormPage() {
 
             {/* 이름 (선택) */}
             <label className="flex flex-col gap-2">
-              <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">
+              <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">
                 이름 <span className="font-normal normal-case text-ink-mute">(선택, 익명 가능)</span>
               </span>
               <input
