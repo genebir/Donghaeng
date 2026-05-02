@@ -72,6 +72,22 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 }
 
+// ── 날짜 레이블 ──────────────────────────────────────────────────────────
+
+function dateSectionLabel(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "오늘";
+  if (d.toDateString() === yesterday.toDateString()) return "어제";
+  return d.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "short" });
+}
+
+function dateKey(iso: string): string {
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
 // ── 사진 카드 ─────────────────────────────────────────────────────────────
 
 function PhotoCard({
@@ -83,7 +99,16 @@ function PhotoCard({
   onSelect: (a: MediaAssetPublic) => void;
   onDelete: (id: string) => void;
 }) {
+  const [confirmDel, setConfirmDel] = useState(false);
   const isVid = asset.kind === "video" || asset.content_type.startsWith("video/");
+
+  // 3초 후 자동 취소
+  useEffect(() => {
+    if (!confirmDel) return;
+    const t = setTimeout(() => setConfirmDel(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirmDel]);
+
   return (
     <div className="group relative aspect-square w-full overflow-hidden rounded-sm bg-paper-deep">
       <button
@@ -120,15 +145,38 @@ function PhotoCard({
       {asset.is_selected && (
         <div className="absolute right-2 top-2 h-2 w-2 rounded-full bg-coral shadow" />
       )}
-      <button
-        onClick={() => onDelete(asset.id)}
-        aria-label="삭제"
-        className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-paper opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rust/90"
-      >
-        <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-          <path d="M2 2l10 10M12 2L2 12" />
-        </svg>
-      </button>
+
+      {/* 삭제 버튼 — 2단계 확인 */}
+      {confirmDel ? (
+        <div
+          className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-md bg-rust/90 px-1.5 py-1 shadow"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] font-medium text-paper">삭제?</span>
+          <button
+            onClick={() => onDelete(asset.id)}
+            className="text-[10px] font-bold text-paper underline underline-offset-1 hover:text-rust-light"
+          >
+            예
+          </button>
+          <button
+            onClick={() => setConfirmDel(false)}
+            className="text-[10px] text-paper/70 hover:text-paper"
+          >
+            취소
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); setConfirmDel(true); }}
+          aria-label="삭제"
+          className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-paper opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rust/90"
+        >
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+            <path d="M2 2l10 10M12 2L2 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
@@ -459,29 +507,56 @@ export default function MediaPage() {
         </div>
       ) : (
         <div
-          className={`grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 rounded-md transition-all ${
-            isDragOver ? "ring-2 ring-ink/30 ring-offset-2" : ""
-          }`}
           onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
           onDragLeave={() => setIsDragOver(false)}
           onDrop={(e) => { setIsDragOver(false); onDrop(e); }}
+          className={`transition-all rounded-md ${isDragOver ? "ring-2 ring-ink/30 ring-offset-2" : ""}`}
         >
-          {/* 업로드 중 항목 */}
-          {uploads.map((item) => (
-            <UploadCard key={item.localId} item={item} />
-          ))}
+          {/* 업로드 중 항목 — 항상 상단에 */}
+          {uploads.length > 0 && (
+            <div className="mb-6">
+              <p className="mb-2 text-body-sm font-medium text-ink-mute">업로드 중…</p>
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
+                {uploads.map((item) => (
+                  <UploadCard key={item.localId} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 스켈레톤 */}
           {loading && assets.length === 0 && (
-            [...Array(10)].map((_, i) => (
-              <div key={i} className="aspect-square animate-pulse rounded-sm bg-paper-deep" />
-            ))
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="aspect-square animate-pulse rounded-sm bg-paper-deep" />
+              ))}
+            </div>
           )}
 
-          {/* 완료된 사진 */}
-          {assets.map((a) => (
-            <PhotoCard key={a.id} asset={a} onSelect={setSelected} onDelete={handleDelete} />
-          ))}
+          {/* 날짜별 그룹 */}
+          {(() => {
+            const groups = new Map<string, MediaAssetPublic[]>();
+            for (const a of assets) {
+              const k = dateKey(a.created_at);
+              if (!groups.has(k)) groups.set(k, []);
+              groups.get(k)!.push(a);
+            }
+            return Array.from(groups.entries()).map(([key, group]) => (
+              <section key={key} className="mb-8">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-body-sm font-medium text-ink-mute">
+                    {dateSectionLabel(group[0].created_at)}
+                  </h2>
+                  <span className="text-caption text-ink-mute">{group.length}장</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
+                  {group.map((a) => (
+                    <PhotoCard key={a.id} asset={a} onSelect={setSelected} onDelete={handleDelete} />
+                  ))}
+                </div>
+              </section>
+            ));
+          })()}
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { fetchApi, ApiError } from "@/lib/api";
 import type { TeamStatus } from "@/types/api";
 import { TeamOnboarding } from "./TeamOnboarding";
+import { ShareLinkButton } from "./ShareLinkButton";
 
 // ── API 응답 타입 ──────────────────────────────────────────────────────────
 
@@ -267,6 +268,7 @@ export default async function TeamHomePage({ params }: Props) {
           </svg>
           소식 쓰기
         </Link>
+        <ShareLinkButton slug={team.slug} />
       </div>
 
       {/* ── 검토 대기 배너 ──────────────────────────────────────────────── */}
