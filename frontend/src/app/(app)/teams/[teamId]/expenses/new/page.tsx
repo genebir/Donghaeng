@@ -112,7 +112,7 @@ function ReceiptUpload({
           className="h-9 rounded-md border border-rust/40 px-4 text-body-sm text-rust hover:bg-rust/5">
           업로드 실패 — 다시 시도
         </button>
-        <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={onChange} className="sr-only" />
+        <input ref={inputRef} type="file" accept="image/*" onChange={onChange} className="sr-only" />
       </div>
     );
   }
@@ -139,7 +139,7 @@ function ReceiptUpload({
           영수증 사진 추가 (선택)
         </>
       )}
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={onChange} className="sr-only" />
+      <input ref={inputRef} type="file" accept="image/*" onChange={onChange} className="sr-only" />
     </button>
   );
 }
