@@ -57,7 +57,7 @@ export default function ShareSettingsPage() {
   return (
     <div className="mx-auto max-w-[640px]">
       <header className="mb-8">
-        <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">본진 공유</p>
+        <p className="text-overline uppercase tracking-overline text-ink-mute">본진 공유</p>
         <h1 className="font-display mt-1 text-h1">공유 설정<span className="text-coral">.</span></h1>
       </header>
 

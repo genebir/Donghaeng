@@ -247,7 +247,7 @@ export default function ReimbursementDetailPage() {
       <header className="mb-6">
         <div className="flex items-start gap-3">
           <div className="flex-1">
-            <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">정산</p>
+            <p className="text-overline uppercase tracking-overline text-ink-mute">정산</p>
             <div className="mt-1 flex items-center gap-3">
               <span className="font-mono text-h1 font-semibold tabular-nums text-ink">
                 {formatKRW(data.total_amount)}

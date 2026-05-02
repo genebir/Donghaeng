@@ -116,7 +116,7 @@ export default async function SharePage({ params }: Props) {
         <div className="mx-auto max-w-[720px]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-overline uppercase tracking-[0.12em] text-ci-gray">동행 · 단기선교</p>
+              <p className="text-overline uppercase tracking-overline text-ci-gray">동행 · 단기선교</p>
               <h1 className="font-display mt-2 text-h1 text-paper leading-tight">
                 {team.name}
               </h1>
@@ -174,7 +174,7 @@ export default async function SharePage({ params }: Props) {
               {updates.map((update, i) => (
                 <article key={update.id}>
                   {update.published_at && (
-                    <p className="text-overline uppercase tracking-[0.12em] text-ink-mute mb-3">
+                    <p className="text-overline uppercase tracking-overline text-ink-mute mb-3">
                       {formatDate(update.published_at)}
                     </p>
                   )}
@@ -197,7 +197,7 @@ export default async function SharePage({ params }: Props) {
           {/* 특선 간증 섹션 */}
           {testimonies.length > 0 && (
             <section className="mt-16 border-t border-ink/10 pt-12">
-              <p className="text-overline uppercase tracking-[0.12em] text-ink-mute mb-2">현장의 목소리</p>
+              <p className="text-overline uppercase tracking-overline text-ink-mute mb-2">현장의 목소리</p>
               <h2 className="font-display text-h2 text-ink mb-8">간증 · 기도제목</h2>
               <div className="flex flex-col gap-6">
                 {testimonies.map((t) => (
