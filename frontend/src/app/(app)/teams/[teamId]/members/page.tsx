@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 
@@ -182,6 +182,7 @@ export default function MembersPage() {
   const [addPart, setAddPart] = useState<TeamPart | "">("");
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -257,13 +258,16 @@ export default function MembersPage() {
     }
   }
 
-  async function handleSearch(q: string) {
+  function handleSearch(q: string) {
     setSearchQuery(q);
     setSelectedUser(null);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     if (q.length < 1) { setSearchResults([]); return; }
-    const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    setSearchResults(data.data ?? []);
+    searchTimer.current = setTimeout(async () => {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setSearchResults(data.data ?? []);
+    }, 300);
   }
 
   async function handleAdd(e: React.FormEvent) {
