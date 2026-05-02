@@ -407,6 +407,12 @@ export default function NewExpensePage() {
             id="notes"
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !loading) {
+                e.preventDefault();
+                handleSubmit(e as unknown as React.FormEvent);
+              }
+            }}
             rows={2}
             placeholder="추가 설명"
             className="w-full resize-none rounded-md border border-ink/20 bg-paper px-4 py-2.5 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
