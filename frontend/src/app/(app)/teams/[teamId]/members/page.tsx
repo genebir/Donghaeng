@@ -178,6 +178,7 @@ export default function MembersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{ id: string; name: string; email: string }[]>([]);
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  const [highlightedIdx, setHighlightedIdx] = useState(-1);
   const [addRole, setAddRole] = useState<TeamRole>("MEMBER");
   const [addPart, setAddPart] = useState<TeamPart | "">("");
   const [addLoading, setAddLoading] = useState(false);
@@ -261,6 +262,7 @@ export default function MembersPage() {
   function handleSearch(q: string) {
     setSearchQuery(q);
     setSelectedUser(null);
+    setHighlightedIdx(-1);
     if (searchTimer.current) clearTimeout(searchTimer.current);
     if (q.length < 1) { setSearchResults([]); return; }
     searchTimer.current = setTimeout(async () => {
@@ -268,6 +270,27 @@ export default function MembersPage() {
       const data = await res.json();
       setSearchResults(data.data ?? []);
     }, 300);
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (searchResults.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIdx((i) => Math.min(i + 1, searchResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIdx((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && highlightedIdx >= 0) {
+      e.preventDefault();
+      const u = searchResults[highlightedIdx];
+      setSelectedUser({ id: u.id, name: u.name });
+      setSearchResults([]);
+      setSearchQuery("");
+      setHighlightedIdx(-1);
+    } else if (e.key === "Escape") {
+      setSearchResults([]);
+      setHighlightedIdx(-1);
+    }
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -388,16 +411,17 @@ export default function MembersPage() {
                     placeholder="이름 또는 이메일로 검색"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
                     autoComplete="off"
                   />
                   {searchResults.length > 0 && (
                     <ul className="absolute z-10 mt-1 w-full rounded-md border border-ink/20 bg-paper shadow-md">
-                      {searchResults.map((u) => (
+                      {searchResults.map((u, idx) => (
                         <li key={u.id}>
                           <button
                             type="button"
-                            onClick={() => { setSelectedUser({ id: u.id, name: u.name }); setSearchResults([]); setSearchQuery(""); }}
-                            className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-ink/5"
+                            onClick={() => { setSelectedUser({ id: u.id, name: u.name }); setSearchResults([]); setSearchQuery(""); setHighlightedIdx(-1); }}
+                            className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === highlightedIdx ? "bg-ink/8" : "hover:bg-ink/5"}`}
                           >
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-caption font-medium text-paper flex-shrink-0">
                               {u.name.charAt(0)}
