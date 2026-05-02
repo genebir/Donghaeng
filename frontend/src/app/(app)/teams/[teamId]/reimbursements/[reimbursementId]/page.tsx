@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import type { ReimbursementPublic, ReimbursementStatus, ExpenseCategory } from "@/types/api";
 
 const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
@@ -117,7 +117,6 @@ function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
 
 export default function ReimbursementDetailPage() {
   const { teamId, reimbursementId } = useParams<{ teamId: string; reimbursementId: string }>();
-  const router = useRouter();
 
   const [data, setData] = useState<ReimbursementPublic | null>(null);
   const [fullAccountNumber, setFullAccountNumber] = useState<string | null>(null);
@@ -233,13 +232,13 @@ export default function ReimbursementDetailPage() {
       )}
 
       {/* 뒤로 가기 */}
-      <button onClick={() => router.back()}
+      <Link href={`/teams/${teamId}/reimbursements`}
         className="mb-6 flex items-center gap-1.5 text-body-sm text-ink-mute hover:text-ink">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M11 7H3M6 4L3 7l3 3" />
         </svg>
         정산 목록
-      </button>
+      </Link>
 
       <header className="mb-6">
         <div className="flex items-start gap-3">
