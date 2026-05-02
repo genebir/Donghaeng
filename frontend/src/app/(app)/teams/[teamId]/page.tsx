@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { fetchApi, ApiError } from "@/lib/api";
 import type { TeamStatus } from "@/types/api";
 import { TeamOnboarding } from "./TeamOnboarding";
+import { RejectedExpenseAlert } from "./RejectedExpenseAlert";
 import { ShareLinkButton } from "./ShareLinkButton";
 
 // ── API 응답 타입 ──────────────────────────────────────────────────────────
@@ -247,6 +248,9 @@ export default async function TeamHomePage({ params }: Props) {
 
       {/* ── 신규 멤버 온보딩 ─────────────────────────────────────────────── */}
       <TeamOnboarding />
+
+      {/* ── 반려 지출 알림 ──────────────────────────────────────────────── */}
+      <RejectedExpenseAlert />
 
       {/* ── 빠른 액션 ────────────────────────────────────────────────────── */}
       <div className="mb-6 flex flex-wrap gap-3">

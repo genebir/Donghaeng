@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import type { ExpenseCategory, ExpensePublic, ExpenseStatus } from "@/types/api";
 
 // ── 레이블 / 스타일 ─────────────────────────────────────────────────────────
@@ -230,11 +230,19 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 
 export default function ExpensesPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const searchParams = useSearchParams();
 
   const [allExpenses, setAllExpenses] = useState<ExpensePublic[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = searchParams.get("tab");
+    return t === "mine" ? "mine" : "all";
+  });
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const s = searchParams.get("status") as StatusFilter | null;
+    const valid: StatusFilter[] = ["all", "pending", "approved", "rejected", "reimbursed"];
+    return s && valid.includes(s) ? s : "all";
+  });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
