@@ -8,6 +8,48 @@ interface State {
   loaded: boolean;
 }
 
+// Module-level cache: key = teamId, value = { isAdmin, ts }
+// Shared across all hook instances in the same browser tab session.
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const cache = new Map<string, { isAdmin: boolean; ts: number }>();
+
+// De-duplicate in-flight fetches so two simultaneous mounts share one request.
+const inflight = new Map<string, Promise<boolean>>();
+
+async function resolveAdmin(teamId: string): Promise<boolean> {
+  const cached = cache.get(teamId);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    return cached.isAdmin;
+  }
+
+  let req = inflight.get(teamId);
+  if (!req) {
+    req = fetch("/api/users/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const me = json?.data;
+        if (!me) return false;
+        const isOrgAdmin =
+          me.org_role === "OWNER" || me.org_role === "ADMIN";
+        const isDirector = (me.outreach_memberships ?? []).some(
+          (om: { role: string }) => om.role === "DIRECTOR"
+        );
+        const isLeader = (me.team_memberships ?? []).some(
+          (tm: { team_id: string; role: string }) =>
+            tm.team_id === teamId && tm.role === "LEADER"
+        );
+        return isOrgAdmin || isDirector || isLeader;
+      })
+      .then((isAdmin) => {
+        cache.set(teamId, { isAdmin, ts: Date.now() });
+        return isAdmin;
+      })
+      .finally(() => inflight.delete(teamId));
+    inflight.set(teamId, req);
+  }
+  return req;
+}
+
 export function useTeamRole(): State {
   const params = useParams();
   const teamId = params?.teamId as string | undefined;
@@ -18,22 +60,8 @@ export function useTeamRole(): State {
       setState({ isAdmin: false, loaded: true });
       return;
     }
-    fetch("/api/users/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        const me = json?.data;
-        if (!me) { setState({ isAdmin: false, loaded: true }); return; }
-        const isOrgAdmin =
-          me.org_role === "OWNER" || me.org_role === "ADMIN";
-        const isDirector = (me.outreach_memberships ?? []).some(
-          (om: { role: string }) => om.role === "DIRECTOR"
-        );
-        const isLeader = (me.team_memberships ?? []).some(
-          (tm: { team_id: string; role: string }) =>
-            tm.team_id === teamId && tm.role === "LEADER"
-        );
-        setState({ isAdmin: isOrgAdmin || isDirector || isLeader, loaded: true });
-      })
+    resolveAdmin(teamId)
+      .then((isAdmin) => setState({ isAdmin, loaded: true }))
       .catch(() => setState({ isAdmin: false, loaded: true }));
   }, [teamId]);
 
