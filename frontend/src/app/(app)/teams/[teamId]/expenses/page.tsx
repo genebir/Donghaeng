@@ -128,6 +128,15 @@ function KpiMini({ label, value }: { label: string; value: string }) {
 // ── 페이지 ────────────────────────────────────────────────────────────────
 
 type Tab = "all" | "mine";
+type StatusFilter = "all" | ExpenseStatus;
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: "all",        label: "전체" },
+  { key: "pending",    label: "검토 대기" },
+  { key: "approved",   label: "승인됨" },
+  { key: "rejected",   label: "반려됨" },
+  { key: "reimbursed", label: "정산 완료" },
+];
 
 export default function ExpensesPage() {
   const { teamId } = useParams<{ teamId: string }>();
@@ -135,6 +144,7 @@ export default function ExpensesPage() {
   const [allExpenses, setAllExpenses] = useState<ExpensePublic[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -172,9 +182,15 @@ export default function ExpensesPage() {
     load();
   }, [teamId, showToast]);
 
-  const displayed = tab === "mine" && meId
+  const tabFiltered = tab === "mine" && meId
     ? allExpenses.filter((e) => e.purchaser_user_id === meId)
     : allExpenses;
+
+  const displayed = statusFilter === "all"
+    ? tabFiltered
+    : tabFiltered.filter((e) => e.status === statusFilter);
+
+  const rejectedCount = tabFiltered.filter((e) => e.status === "rejected").length;
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -197,12 +213,12 @@ export default function ExpensesPage() {
         </Link>
       </header>
 
-      {/* 탭 */}
-      <div className="mb-5 flex gap-1 rounded-md border border-ink/10 bg-paper-deep p-1">
+      {/* 전체/내 지출 탭 */}
+      <div className="mb-3 flex gap-1 rounded-md border border-ink/10 bg-paper-deep p-1">
         {(["all", "mine"] as Tab[]).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => { setTab(t); setStatusFilter("all"); }}
             className={`flex-1 rounded py-1.5 text-body-sm font-medium transition-colors ${
               tab === t ? "bg-paper text-ink shadow-sm" : "text-ink-mute hover:text-ink"
             }`}
@@ -211,6 +227,46 @@ export default function ExpensesPage() {
           </button>
         ))}
       </div>
+
+      {/* 상태 필터 */}
+      {!loading && (
+        <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1">
+          {STATUS_FILTERS.map(({ key, label }) => {
+            const count = key === "all" ? tabFiltered.length : tabFiltered.filter((e) => e.status === key).length;
+            if (key !== "all" && count === 0) return null;
+            return (
+              <button
+                key={key}
+                onClick={() => setStatusFilter(key)}
+                className={`flex-shrink-0 rounded-full px-3 py-1 text-caption font-medium transition-colors ${
+                  statusFilter === key
+                    ? "bg-ink text-paper"
+                    : "bg-paper-deep text-ink-mute hover:bg-ink/10 hover:text-ink"
+                }`}
+              >
+                {label}
+                {key !== "all" && count > 0 && (
+                  <span className={`ml-1 ${statusFilter === key ? "opacity-70" : "opacity-50"}`}>{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 반려된 지출 알림 */}
+      {!loading && tab === "mine" && rejectedCount > 0 && statusFilter !== "rejected" && (
+        <button
+          onClick={() => setStatusFilter("rejected")}
+          className="mb-4 flex w-full items-center gap-3 rounded-md border border-rust/30 bg-rust/5 px-4 py-3 text-left hover:bg-rust/10 transition-colors"
+        >
+          <span className="text-rust">!</span>
+          <span className="flex-1 text-body-sm text-rust font-medium">
+            반려된 지출 {rejectedCount}건 — 수정 후 재제출이 필요해요
+          </span>
+          <span className="text-caption text-rust/70">확인하기 →</span>
+        </button>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -225,15 +281,25 @@ export default function ExpensesPage() {
           {displayed.length === 0 ? (
             <div className="py-16 text-center">
               <p className="text-body text-ink-mute">
-                {tab === "mine" ? "등록한 지출이 없습니다." : "등록된 지출이 없습니다."}
+                {statusFilter !== "all"
+                  ? `${STATUS_CONFIG[statusFilter as ExpenseStatus]?.label ?? statusFilter} 지출이 없습니다.`
+                  : tab === "mine" ? "등록한 지출이 없습니다." : "등록된 지출이 없습니다."}
               </p>
-              {tab === "all" && (
+              {tab === "all" && statusFilter === "all" && (
                 <Link
                   href={`/teams/${teamId}/expenses/new`}
                   className="mt-4 inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80"
                 >
                   첫 지출 등록하기
                 </Link>
+              )}
+              {statusFilter !== "all" && (
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="mt-3 text-body-sm text-ocean hover:underline"
+                >
+                  필터 초기화
+                </button>
               )}
             </div>
           ) : (
