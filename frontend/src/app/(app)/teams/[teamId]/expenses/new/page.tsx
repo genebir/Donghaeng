@@ -39,9 +39,11 @@ type ReceiptState = "idle" | "uploading" | "done" | "error";
 function ReceiptUpload({
   teamId,
   onUploaded,
+  onRemoved,
 }: {
   teamId: string;
   onUploaded: (mediaId: string) => void;
+  onRemoved?: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<ReceiptState>("idle");
@@ -92,7 +94,7 @@ function ReceiptUpload({
           <img src={preview} alt="영수증" className="h-full w-full rounded-md object-cover border border-ink/15" />
           <button
             type="button"
-            onClick={() => { setState("idle"); setPreview(null); }}
+            onClick={() => { setState("idle"); setPreview(null); onRemoved?.(); }}
             className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[9px] font-bold text-paper hover:bg-rust"
           >
             ✕
@@ -305,6 +307,11 @@ export default function NewExpensePage() {
             />
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-body-sm font-medium text-ink-mute">원</span>
           </div>
+          {form.amount && !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0 && (
+            <p className="mt-1.5 text-right font-mono text-body font-semibold text-ink">
+              {new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(parseFloat(form.amount))}
+            </p>
+          )}
         </div>
 
         {/* ② 내용 */}
@@ -383,7 +390,12 @@ export default function NewExpensePage() {
         {/* ⑦ 영수증 사진 */}
         <div className="flex flex-col gap-2">
           <p className="text-body-sm font-medium text-ink-soft">영수증</p>
-          <ReceiptUpload teamId={teamId} onUploaded={(id) => setReceiptMediaId(id)} />
+          <ReceiptUpload
+            key={successCount}
+            teamId={teamId}
+            onUploaded={(id) => setReceiptMediaId(id)}
+            onRemoved={() => setReceiptMediaId(null)}
+          />
         </div>
 
         {/* ⑧ 메모 (선택) */}
