@@ -384,9 +384,8 @@ export default function TestimoniesPage() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formContent.trim()) return;
+  const doCreate = async () => {
+    if (!formContent.trim() || busy) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/testimonies/${teamId}`, {
@@ -457,7 +456,7 @@ export default function TestimoniesPage() {
 
       {/* 작성 폼 */}
       {writing && (
-        <form onSubmit={handleCreate} className="mb-6 rounded-md border border-ink/15 bg-paper p-5">
+        <form onSubmit={(e) => { e.preventDefault(); doCreate(); }} className="mb-6 rounded-md border border-ink/15 bg-paper p-5">
           {/* 종류 선택 */}
           <div className="mb-4 flex gap-3">
             {(["testimony", "prayer_request"] as TestimonyKind[]).map((k) => (
@@ -481,9 +480,9 @@ export default function TestimoniesPage() {
             rows={5}
             autoFocus
             onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && formContent.trim() && !busy) {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                 e.preventDefault();
-                handleCreate(e as unknown as React.FormEvent);
+                doCreate();
               }
             }}
             className="block w-full resize-none border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"

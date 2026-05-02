@@ -235,7 +235,7 @@ export default function TeamSettingsPage() {
               onKeyDown={(e) => {
                 if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !teamSaving) {
                   e.preventDefault();
-                  handleSaveTeam(e as unknown as React.FormEvent);
+                  e.currentTarget.form?.requestSubmit();
                 }
               }}
               rows={3}
@@ -314,7 +314,7 @@ export default function TeamSettingsPage() {
               onKeyDown={(e) => {
                 if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !destSaving) {
                   e.preventDefault();
-                  handleSaveDest(e as unknown as React.FormEvent);
+                  e.currentTarget.form?.requestSubmit();
                 }
               }}
               rows={3}
