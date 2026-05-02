@@ -19,26 +19,37 @@ function formatDate(iso: string) {
 function WriteForm({
   initial,
   onSave,
+  onPublish,
   onCancel,
 }: {
   initial?: HomeUpdatePublic;
   onSave: (title: string, content: string) => Promise<void>;
+  onPublish?: (title: string, content: string) => Promise<void>;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [content, setContent] = useState(initial?.content ?? "");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"save" | "publish" | null>(null);
 
-  const submit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
-    setBusy(true);
+    setBusy("save");
     await onSave(title.trim(), content.trim());
-    setBusy(false);
+    setBusy(null);
   };
 
+  const handlePublish = async () => {
+    if (!title.trim() || !content.trim() || !onPublish) return;
+    setBusy("publish");
+    await onPublish(title.trim(), content.trim());
+    setBusy(null);
+  };
+
+  const disabled = !title.trim() || !content.trim() || busy !== null;
+
   return (
-    <form onSubmit={submit} className="rounded-md border border-ink/15 bg-paper p-5">
+    <form onSubmit={handleSave} className="rounded-md border border-ink/15 bg-paper p-5">
       <label className="block">
         <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">제목</span>
         <input
@@ -57,10 +68,20 @@ function WriteForm({
           className="mt-2 block w-full resize-none border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
         />
       </label>
-      <div className="mt-4 flex gap-2">
-        <button type="submit" disabled={!title.trim() || !content.trim() || busy}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {onPublish && (
+          <button
+            type="button"
+            onClick={handlePublish}
+            disabled={disabled}
+            className="inline-flex h-9 items-center rounded-md bg-coral px-5 text-body-sm font-medium text-paper hover:bg-coral/90 disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {busy === "publish" ? "발행 중…" : "본진에 발행"}
+          </button>
+        )}
+        <button type="submit" disabled={disabled}
           className="inline-flex h-9 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:bg-ink/90 disabled:opacity-40 disabled:pointer-events-none">
-          {busy ? "저장 중…" : initial ? "수정 저장" : "임시저장"}
+          {busy === "save" ? "저장 중…" : initial ? "수정 저장" : "임시저장"}
         </button>
         <button type="button" onClick={onCancel}
           className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep">
@@ -112,6 +133,34 @@ export default function HomeUpdatesPage() {
       setUpdates((prev) => [json.data, ...prev]);
       setWriting(false);
       showToast("임시저장됐어요.", true);
+    } catch { showToast("잠깐 문제가 있었어요.", false); }
+  };
+
+  const handleCreateAndPublish = async (title: string, content: string) => {
+    try {
+      const createRes = await fetch(`/api/home-updates/${teamId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content }),
+      });
+      const createJson = await createRes.json();
+      if (!createRes.ok) { showToast(createJson.message ?? "저장 실패", false); return; }
+      const newUpdate: HomeUpdatePublic = createJson.data;
+
+      const pubRes = await fetch(`/api/home-update/${newUpdate.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      });
+      const pubJson = await pubRes.json();
+      if (!pubRes.ok) {
+        setUpdates((prev) => [newUpdate, ...prev]);
+        showToast("저장됐지만 발행에 실패했어요.", false);
+      } else {
+        setUpdates((prev) => [pubJson.data, ...prev]);
+        showToast("발행됐어요. 본진 공유 페이지에 표시됩니다.", true);
+      }
+      setWriting(false);
     } catch { showToast("잠깐 문제가 있었어요.", false); }
   };
 
@@ -187,7 +236,11 @@ export default function HomeUpdatesPage() {
 
       {writing && (
         <div className="mb-6">
-          <WriteForm onSave={handleCreate} onCancel={() => setWriting(false)} />
+          <WriteForm
+            onSave={handleCreate}
+            onPublish={handleCreateAndPublish}
+            onCancel={() => setWriting(false)}
+          />
         </div>
       )}
 
