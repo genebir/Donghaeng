@@ -320,42 +320,44 @@ export function MobileTabbar() {
         </div>
       )}
 
-      {/* 탭바 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center border-t border-ink/10 bg-paper pb-safe md:hidden">
-        {tabs.map((tab) => {
-          const isActive = tab.isActiveCheck
-            ? tab.isActiveCheck(pathname)
-            : tab.exact
-              ? pathname === tab.href
-              : pathname === tab.href || pathname.startsWith(tab.href + "/");
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
+      {/* 탭바 — bg가 safe area까지 내려가도록 pb-safe 적용, 탭 아이템은 h-16 row에만 배치 */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-ink/10 bg-paper pb-safe md:hidden">
+        <div className="flex h-16 items-center">
+          {tabs.map((tab) => {
+            const isActive = tab.isActiveCheck
+              ? tab.isActiveCheck(pathname)
+              : tab.exact
+                ? pathname === tab.href
+                : pathname === tab.href || pathname.startsWith(tab.href + "/");
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={cn(
+                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2",
+                  isActive ? "text-ink" : "text-ink-mute",
+                )}
+              >
+                {tab.icon}
+                <span className="text-caption font-medium">{tab.label}</span>
+              </Link>
+            );
+          })}
+
+          {/* 더보기 버튼 (팀 컨텍스트에서만) */}
+          {teamId && (
+            <button
+              onClick={() => setDrawerOpen(true)}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-0.5 py-2",
-                isActive ? "text-ink" : "text-ink-mute",
+                drawerOpen || isInDrawer ? "text-ink" : "text-ink-mute",
               )}
             >
-              {tab.icon}
-              <span className="text-caption font-medium">{tab.label}</span>
-            </Link>
-          );
-        })}
-
-        {/* 더보기 버튼 (팀 컨텍스트에서만) */}
-        {teamId && (
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2",
-              drawerOpen || isInDrawer ? "text-ink" : "text-ink-mute",
-            )}
-          >
-            <IconMore />
-            <span className="text-caption font-medium">더보기</span>
-          </button>
-        )}
+              <IconMore />
+              <span className="text-caption font-medium">더보기</span>
+            </button>
+          )}
+        </div>
       </nav>
     </>
   );
