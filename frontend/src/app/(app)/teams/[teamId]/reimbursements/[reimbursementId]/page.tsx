@@ -61,11 +61,16 @@ function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reference.trim() && !busy) onConfirm(method, reference, notes);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4">
       <div className="w-full max-w-md rounded-md border border-ink/15 bg-paper p-6">
         <h3 className="mb-4 text-h3">송금 완료 처리</h3>
-        <div className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">송금 방법</span>
             <div className="mt-3 grid grid-cols-4 gap-2">
@@ -96,18 +101,17 @@ function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
               className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body focus:border-ink focus:outline-none"
               placeholder="추가 메모" />
           </label>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button onClick={onClose} disabled={busy}
-            className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep">
-            취소
-          </button>
-          <button disabled={!reference.trim() || busy}
-            onClick={() => reference.trim() && onConfirm(method, reference, notes)}
-            className="inline-flex h-9 items-center rounded-md bg-sage px-4 text-body-sm text-paper hover:bg-sage/90 disabled:opacity-40 disabled:pointer-events-none">
-            {busy ? "처리 중…" : "완료 처리"}
-          </button>
-        </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose} disabled={busy}
+              className="inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep">
+              취소
+            </button>
+            <button type="submit" disabled={!reference.trim() || busy}
+              className="inline-flex h-9 items-center rounded-md bg-sage px-4 text-body-sm text-paper hover:bg-sage/90 disabled:opacity-40 disabled:pointer-events-none">
+              {busy ? "처리 중…" : "완료 처리"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
