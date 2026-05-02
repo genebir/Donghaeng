@@ -123,20 +123,31 @@ function UploadCard({ item }: { item: UploadItem }) {
 
 function Lightbox({
   asset,
+  assets,
   onClose,
   onDelete,
+  onNavigate,
 }: {
   asset: MediaAssetPublic;
+  assets: MediaAssetPublic[];
   onClose: () => void;
   onDelete: (id: string) => void;
+  onNavigate: (asset: MediaAssetPublic) => void;
 }) {
   const [confirmDel, setConfirmDel] = useState(false);
+  const idx = assets.findIndex((a) => a.id === asset.id);
+  const hasPrev = idx > 0;
+  const hasNext = idx < assets.length - 1;
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && hasPrev) { setConfirmDel(false); onNavigate(assets[idx - 1]); }
+      if (e.key === "ArrowRight" && hasNext) { setConfirmDel(false); onNavigate(assets[idx + 1]); }
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [onClose, onNavigate, assets, idx, hasPrev, hasNext]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4" onClick={onClose}>
@@ -154,6 +165,9 @@ function Lightbox({
             <p className="text-caption text-paper/50">{formatBytes(asset.byte_size)}</p>
           )}
           <p className="text-caption text-paper/50">{formatDate(asset.created_at)}</p>
+          {assets.length > 1 && (
+            <p className="text-caption text-paper/40">{idx + 1}/{assets.length}</p>
+          )}
           {confirmDel ? (
             <div className="flex items-center gap-2">
               <span className="text-caption text-rust">삭제할까요?</span>
@@ -175,6 +189,28 @@ function Lightbox({
         >
           <IconClose />
         </button>
+        {hasPrev && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmDel(false); onNavigate(assets[idx - 1]); }}
+            className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-ink/60 text-paper hover:bg-ink/80 transition-colors"
+            aria-label="이전"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M10 3L5 8l5 5" />
+            </svg>
+          </button>
+        )}
+        {hasNext && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmDel(false); onNavigate(assets[idx + 1]); }}
+            className="absolute right-0 top-1/2 translate-x-full -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-ink/60 text-paper hover:bg-ink/80 transition-colors"
+            aria-label="다음"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M6 3l5 5-5 5" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -303,8 +339,10 @@ export default function MediaPage() {
       {selected && (
         <Lightbox
           asset={selected}
+          assets={assets}
           onClose={() => setSelected(null)}
           onDelete={(id) => { handleDelete(id); setSelected(null); }}
+          onNavigate={setSelected}
         />
       )}
 
