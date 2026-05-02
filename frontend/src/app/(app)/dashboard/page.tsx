@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { fetchApi, ApiError } from "@/lib/api";
 import type { OrgPublic, OutreachWithTeams, TeamPublic } from "@/types/api";
@@ -123,21 +124,25 @@ export default async function DashboardPage() {
   let orgs: OrgPublic[] = [];
   let orgRole: string | null = null;
   let directorOutreachIds: string[] = [];
+  let singleTeamId: string | null = null;
 
   try {
     await Promise.all([
       fetchApi<OrgPublic[]>("/orgs", session.accessToken)
         .then((o) => { orgs = o; })
         .catch(() => {}),
-      fetchApi<{ org_role: string | null; outreach_memberships: { outreach_id: string; role: string }[] }>(
-        "/users/me",
-        session.accessToken,
-      )
+      fetchApi<{
+        org_role: string | null;
+        outreach_memberships: { outreach_id: string; role: string }[];
+        team_memberships: { team_id: string }[];
+      }>("/users/me", session.accessToken)
         .then((p) => {
           orgRole = p.org_role;
           directorOutreachIds = (p.outreach_memberships ?? [])
             .filter((om) => om.role === "DIRECTOR")
             .map((om) => om.outreach_id);
+          const teams = p.team_memberships ?? [];
+          if (teams.length === 1) singleTeamId = teams[0].team_id;
         })
         .catch(() => {}),
     ]);
@@ -146,6 +151,11 @@ export default async function DashboardPage() {
   }
 
   const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
+
+  // 일반 팀원이 딱 한 팀에만 속해 있으면 바로 팀 홈으로 이동
+  if (singleTeamId && !isOrgAdmin && directorOutreachIds.length === 0) {
+    redirect(`/teams/${singleTeamId}`);
+  }
 
   if (orgs.length === 0) return <EmptyState />;
 
