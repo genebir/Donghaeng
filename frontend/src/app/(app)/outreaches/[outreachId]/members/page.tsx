@@ -48,8 +48,15 @@ export default function OutreachMembersPage() {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const showToast = useCallback((msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3500);
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -141,6 +148,7 @@ export default function OutreachMembersPage() {
       setSelectedUser(null);
       setAddTeamId("");
       await fetchData();
+      showToast("권한이 추가됐어요.", true);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "오류가 발생했어요.");
     } finally {
@@ -150,11 +158,24 @@ export default function OutreachMembersPage() {
 
   async function handleRemove(membershipId: string) {
     setConfirmRemoveId(null);
-    const res = await fetch(`/api/outreaches/${outreachId}/members/${membershipId}`, {
-      method: "DELETE",
-    });
-    if (res.ok || res.status === 204) {
-      setMembers((prev) => prev.filter((m) => m.id !== membershipId));
+    setRemovingId(membershipId);
+    const backup = members;
+    setMembers((prev) => prev.filter((m) => m.id !== membershipId));
+    try {
+      const res = await fetch(`/api/outreaches/${outreachId}/members/${membershipId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok && res.status !== 204) {
+        setMembers(backup);
+        showToast("제거에 실패했어요.", false);
+      } else {
+        showToast("권한을 제거했어요.", true);
+      }
+    } catch {
+      setMembers(backup);
+      showToast("잠깐 문제가 있었어요.", false);
+    } finally {
+      setRemovingId(null);
     }
   }
 
@@ -162,19 +183,28 @@ export default function OutreachMembersPage() {
     teams.find((t) => t.id === teamId)?.name ?? "—";
 
   return (
-    <div className="mx-auto max-w-2xl py-10 px-4">
-      <div className="mb-8 flex items-center gap-4">
-        <Link href="/dashboard" className="text-body-sm text-ink-mute hover:text-ink">
-          ← 대시보드
-        </Link>
-      </div>
+    <div className="mx-auto max-w-[720px]">
+      {toast && (
+        <div className={`fixed right-5 top-16 z-50 rounded-md border-l-2 bg-ink px-5 py-3 text-body-sm text-paper shadow-lg ${toast.ok ? "border-l-sage" : "border-l-rust"}`}>
+          {toast.msg}
+        </div>
+      )}
 
-      <h1 className="font-display text-h1 mb-1">
-        아웃리치 권한 관리<span className="text-coral">.</span>
-      </h1>
-      <p className="text-body text-ink-soft mb-8">
-        디렉터와 사역자를 지정해 아웃리치 운영 권한을 부여하세요.
-      </p>
+      <header className="mb-8">
+        <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1.5 text-body-sm text-ink-mute hover:text-ink">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M11 7H3M6 4L3 7l3 3" />
+          </svg>
+          대시보드
+        </Link>
+        <p className="tracking-overline text-overline uppercase text-ink-mute">아웃리치</p>
+        <h1 className="font-display mt-1 text-h1">
+          권한 관리<span className="text-coral">.</span>
+        </h1>
+        <p className="mt-2 text-body text-ink-soft">
+          디렉터와 사역자를 지정해 아웃리치 운영 권한을 부여하세요.
+        </p>
+      </header>
 
       {/* 권한 설명 */}
       <div className="mb-8 grid grid-cols-2 gap-3 text-body-sm">
@@ -236,9 +266,10 @@ export default function OutreachMembersPage() {
                 ) : (
                   <button
                     onClick={() => setConfirmRemoveId(m.id)}
-                    className="shrink-0 text-caption text-ink-mute hover:text-rust transition-colors"
+                    disabled={removingId === m.id}
+                    className="shrink-0 text-caption text-ink-mute hover:text-rust transition-colors disabled:opacity-40"
                   >
-                    제거
+                    {removingId === m.id ? "…" : "제거"}
                   </button>
                 )}
               </li>
