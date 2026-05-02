@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ReimbursementPublic, ReimbursementPreviewItem, ReimbursementStatus, ExpenseCategory } from "@/types/api";
@@ -143,9 +144,9 @@ export default function ReimbursementsPage() {
                 <h2 className="mb-3 text-h3 text-ink">정산 내역</h2>
                 <div className="flex flex-col gap-2">
                   {reimbursements.map((r) => (
-                    <button key={r.id}
-                      onClick={() => router.push(`/teams/${teamId}/reimbursements/${r.id}`)}
-                      className="flex items-center gap-4 rounded-md border border-ink/10 bg-paper p-4 text-left hover:border-ink/30 transition-colors">
+                    <Link key={r.id}
+                      href={`/teams/${teamId}/reimbursements/${r.id}`}
+                      className="flex items-center gap-4 rounded-md border border-ink/10 bg-paper p-4 hover:border-ink/30 transition-colors">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-body-sm font-semibold text-ink">
@@ -171,7 +172,7 @@ export default function ReimbursementsPage() {
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 text-ink-mute" aria-hidden>
                         <path d="M6 3l5 5-5 5" />
                       </svg>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </>
