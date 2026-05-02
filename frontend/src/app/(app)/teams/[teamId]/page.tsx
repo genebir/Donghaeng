@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { fetchApi, ApiError } from "@/lib/api";
 import type { TeamStatus } from "@/types/api";
+import { TeamOnboarding } from "./TeamOnboarding";
 
 // ── API 응답 타입 ──────────────────────────────────────────────────────────
 
@@ -229,6 +230,9 @@ export default async function TeamHomePage({ params }: Props) {
           <p className="mt-4 max-w-prose text-body text-ink-soft">{team.description}</p>
         )}
       </header>
+
+      {/* ── 신규 멤버 온보딩 ─────────────────────────────────────────────── */}
+      <TeamOnboarding />
 
       {/* ── 빠른 액션 ────────────────────────────────────────────────────── */}
       <div className="mb-6 flex flex-wrap gap-3">
