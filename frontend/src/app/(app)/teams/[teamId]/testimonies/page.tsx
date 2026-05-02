@@ -332,6 +332,20 @@ export default function TestimoniesPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!writing) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setWriting(false);
+        setFormContent("");
+        setFormName("");
+        setFormVisibility("team");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [writing]);
+
   // 클라이언트 필터 + 주목 항목 상단 정렬
   const tabFiltered = filter === "all" ? testimonies : testimonies.filter((t) => t.kind === filter);
   const displayed = [...tabFiltered].sort((a, b) => {

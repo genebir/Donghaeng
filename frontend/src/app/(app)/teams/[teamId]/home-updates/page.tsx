@@ -31,6 +31,12 @@ function WriteForm({
   const [content, setContent] = useState(initial?.content ?? "");
   const [busy, setBusy] = useState<"save" | "publish" | null>(null);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
