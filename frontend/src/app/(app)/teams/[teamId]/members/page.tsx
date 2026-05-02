@@ -110,45 +110,43 @@ function MemberRow({
       </div>
 
       {editing && (
-        <div className="mt-4 border-t border-ink/10 pt-4 flex flex-wrap gap-4 items-end">
-          <div className="flex flex-col gap-1">
-            <label className="text-caption text-ink-mute">역할</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as TeamRole)}
-              className="rounded border border-ink/20 bg-paper px-3 py-1.5 text-body-sm text-ink focus:outline-none"
-            >
-              <option value="MEMBER">팀원</option>
-              <option value="LEADER">팀장</option>
-            </select>
+        <div className="mt-4 border-t border-ink/10 pt-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-caption text-ink-mute">역할</span>
+            <div className="flex gap-2">
+              {(["MEMBER", "LEADER"] as TeamRole[]).map((r) => (
+                <button key={r} type="button" onClick={() => setRole(r)}
+                  className={`flex-1 rounded-lg py-2 text-body-sm font-medium transition-colors ${role === r ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"}`}>
+                  {r === "MEMBER" ? "팀원" : "팀장"}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-caption text-ink-mute">파트</label>
-            <select
-              value={part}
-              onChange={(e) => setPart(e.target.value as TeamPart | "")}
-              className="rounded border border-ink/20 bg-paper px-3 py-1.5 text-body-sm text-ink focus:outline-none"
-            >
-              <option value="">— 없음 —</option>
-              {PARTS.map((p) => <option key={p} value={p}>{PART_LABEL[p]}</option>)}
-            </select>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-caption text-ink-mute">파트</span>
+            <div className="grid grid-cols-4 gap-1.5">
+              <button type="button" onClick={() => setPart("")}
+                className={`rounded-lg py-2 text-caption font-medium transition-colors ${part === "" ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"}`}>
+                없음
+              </button>
+              {PARTS.map((p) => (
+                <button key={p} type="button" onClick={() => setPart(p)}
+                  className={`rounded-lg py-2 text-caption font-medium transition-colors ${part === p ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"}`}>
+                  {PART_LABEL[p]}
+                </button>
+              ))}
+            </div>
           </div>
-          <label className="flex items-center gap-2 text-body-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPartLead}
-              onChange={(e) => setIsPartLead(e.target.checked)}
-              className="accent-ink"
-            />
-            파트장
-          </label>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="h-8 rounded bg-ink px-4 text-body-sm font-medium text-paper disabled:opacity-50"
-          >
-            {saving ? "저장 중…" : "저장"}
-          </button>
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-body-sm cursor-pointer">
+              <input type="checkbox" checked={isPartLead} onChange={(e) => setIsPartLead(e.target.checked)} className="accent-ink" />
+              파트장
+            </label>
+            <button onClick={save} disabled={saving}
+              className="h-8 rounded-md bg-ink px-5 text-body-sm font-medium text-paper disabled:opacity-50">
+              {saving ? "저장 중…" : "저장"}
+            </button>
+          </div>
         </div>
       )}
     </li>
@@ -375,23 +373,33 @@ export default function MembersPage() {
               )}
             </div>
 
-            <div className="flex gap-3">
-              <select
-                value={addRole}
-                onChange={(e) => setAddRole(e.target.value as TeamRole)}
-                className="rounded-md border border-ink/20 bg-paper px-3 py-2.5 text-body text-ink focus:outline-none"
-              >
-                <option value="MEMBER">팀원</option>
-                <option value="LEADER">팀장</option>
-              </select>
-              <select
-                value={addPart}
-                onChange={(e) => setAddPart(e.target.value as TeamPart | "")}
-                className="rounded-md border border-ink/20 bg-paper px-3 py-2.5 text-body text-ink focus:outline-none"
-              >
-                <option value="">파트 선택</option>
-                {PARTS.map((p) => <option key={p} value={p}>{PART_LABEL[p]}</option>)}
-              </select>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-caption text-ink-mute">역할</span>
+                <div className="flex gap-2">
+                  {(["MEMBER", "LEADER"] as TeamRole[]).map((r) => (
+                    <button key={r} type="button" onClick={() => setAddRole(r)}
+                      className={`flex-1 rounded-lg py-2 text-body-sm font-medium transition-colors ${addRole === r ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"}`}>
+                      {r === "MEMBER" ? "팀원" : "팀장"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-caption text-ink-mute">파트</span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  <button type="button" onClick={() => setAddPart("")}
+                    className={`rounded-lg py-2 text-caption font-medium transition-colors ${addPart === "" ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"}`}>
+                    없음
+                  </button>
+                  {PARTS.map((p) => (
+                    <button key={p} type="button" onClick={() => setAddPart(p)}
+                      className={`rounded-lg py-2 text-caption font-medium transition-colors ${addPart === p ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"}`}>
+                      {PART_LABEL[p]}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             {addError && <p className="text-body-sm text-rust">{addError}</p>}
             <button

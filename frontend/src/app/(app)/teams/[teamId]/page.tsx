@@ -201,6 +201,28 @@ export default async function TeamHomePage({ params }: Props) {
         )}
       </header>
 
+      {/* ── 빠른 액션 ────────────────────────────────────────────────────── */}
+      <div className="mb-6 flex flex-wrap gap-3">
+        <Link
+          href={`/teams/${teamId}/expenses/new`}
+          className="inline-flex h-10 items-center gap-2 rounded-md bg-coral px-5 text-body-sm font-medium text-paper hover:bg-coral/90 active:translate-y-px transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+            <path d="M7 1v12M1 7h12" />
+          </svg>
+          지출 등록
+        </Link>
+        <Link
+          href={`/teams/${teamId}/home-updates`}
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-ink/20 bg-paper px-5 text-body-sm font-medium text-ink hover:bg-paper-deep active:translate-y-px transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5H5L2 12V2.5z" />
+          </svg>
+          소식 쓰기
+        </Link>
+      </div>
+
       {/* ── 요약 KPI ─────────────────────────────────────────────────────── */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <KpiCard
