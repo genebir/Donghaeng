@@ -181,7 +181,13 @@ function EditForm({ expense, onSave, onCancel }: EditFormProps) {
       <div className="flex flex-col gap-1.5">
         <label className="text-body-sm font-medium text-ink-soft">메모</label>
         <textarea name="notes" value={form.notes} onChange={handleChange} rows={2}
-          placeholder="추가 설명 (선택)" className={inputClass + " resize-none"} />
+          placeholder="추가 설명 (선택)" className={inputClass + " resize-none"}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !saving) {
+              e.preventDefault();
+              handleSubmit(e as unknown as React.FormEvent);
+            }
+          }} />
       </div>
 
       <div className="flex gap-3 pt-2">
