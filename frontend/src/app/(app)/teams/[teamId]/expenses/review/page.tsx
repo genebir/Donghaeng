@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { ExpensePublic, ExpenseStatus, ExpenseCategory } from "@/types/api";
@@ -229,7 +230,7 @@ export default function ExpenseReviewPage() {
                   <input type="checkbox" checked={selected.has(expense.id)} onChange={() => toggleSelect(expense.id)}
                     className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer accent-ink" />
                 )}
-                <div className="min-w-0 flex-1">
+                <Link href={`/teams/${teamId}/expenses/${expense.id}`} className="group min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-body font-semibold tabular-nums text-ink">{formatKRW(expense.amount)}</span>
                     <span className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide ${STATUS_CHIP[expense.status]}`}>
@@ -239,7 +240,7 @@ export default function ExpenseReviewPage() {
                       {CATEGORY_LABEL[expense.category]}
                     </span>
                   </div>
-                  <p className="mt-1 text-body-sm font-medium text-ink">{expense.description}</p>
+                  <p className="mt-1 text-body-sm font-medium text-ink group-hover:underline">{expense.description}</p>
                   <p className="mt-0.5 text-caption text-ink-mute">
                     {expense.purchaser_name && <span className="mr-2 font-medium text-ink-soft">{expense.purchaser_name}</span>}
                     {expense.vendor && <span className="mr-2">{expense.vendor}</span>}
@@ -248,7 +249,7 @@ export default function ExpenseReviewPage() {
                   {expense.rejection_reason && (
                     <p className="mt-1 text-caption text-rust">반려 사유: {expense.rejection_reason}</p>
                   )}
-                </div>
+                </Link>
                 {canAct && (
                   <div className="flex flex-shrink-0 gap-1.5">
                     <button onClick={() => handleApprove(expense.id)} disabled={busy}
