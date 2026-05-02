@@ -211,23 +211,33 @@ function ScheduleForm({
 function ScheduleRow({
   item,
   isAdmin,
+  isNow,
+  isNext,
   onEdit,
   onDelete,
 }: {
   item: ScheduleItem;
   isAdmin: boolean;
+  isNow?: boolean;
+  isNext?: boolean;
   onEdit: (item: ScheduleItem) => void;
   onDelete: (id: string) => void;
 }) {
   const [confirmDel, setConfirmDel] = useState(false);
-  const dotColor = item.kind ? (KIND_DOT[item.kind] ?? "bg-ink-mute") : "bg-ink-mute";
+  const dotColor = isNow ? "bg-coral" : item.kind ? (KIND_DOT[item.kind] ?? "bg-ink-mute") : "bg-ink-mute";
 
   return (
-    <li className="group flex gap-4 rounded-md border border-ink/10 bg-paper p-4 transition-colors hover:border-ink/25">
+    <li className={`group flex gap-4 rounded-md border p-4 transition-colors ${isNow ? "border-coral/40 bg-coral/5 hover:border-coral/60" : "border-ink/10 bg-paper hover:border-ink/25"}`}>
       {/* 시간 */}
-      <div className="w-16 flex-shrink-0 text-right text-body-sm text-ink-mute">
-        <span className="block font-medium text-ink">{formatTime(item.starts_at)}</span>
-        {item.ends_at && <span className="text-caption">{formatTime(item.ends_at)}</span>}
+      <div className="w-16 flex-shrink-0 text-right text-body-sm">
+        {isNow && (
+          <span className="mb-1 inline-block rounded bg-coral px-1.5 py-0.5 text-[10px] font-bold text-paper leading-none">지금</span>
+        )}
+        {isNext && !isNow && (
+          <span className="mb-1 inline-block rounded bg-ink px-1.5 py-0.5 text-[10px] font-bold text-paper leading-none">다음</span>
+        )}
+        <span className={`block font-medium ${isNow ? "text-coral" : "text-ink"}`}>{formatTime(item.starts_at)}</span>
+        {item.ends_at && <span className="text-caption text-ink-mute">{formatTime(item.ends_at)}</span>}
       </div>
 
       {/* 타임라인 점 */}
@@ -240,7 +250,7 @@ function ScheduleRow({
       <div className="min-w-0 flex-1 pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium text-ink">{item.title}</span>
+            <span className={`font-medium ${isNow ? "text-coral" : "text-ink"}`}>{item.title}</span>
             {item.kind && (
               <span className="rounded bg-paper-deep px-1.5 py-0.5 text-caption text-ink-soft">
                 {KIND_LABEL[item.kind]}
@@ -448,8 +458,15 @@ export default function SchedulePage() {
     }
   }
 
+  // 현재 시각 (1분마다 갱신)
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // 날짜별 그룹핑
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(nowMs).toISOString().slice(0, 10);
   const sorted = [...items].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const upcoming: ScheduleItem[] = [];
   const past: ScheduleItem[] = [];
@@ -465,6 +482,13 @@ export default function SchedulePage() {
       map.get(key)!.push(item);
     }
     return Array.from(map.entries()).map(([key, items]) => ({ key, dateLabel: formatDate(items[0].starts_at), items }));
+  }
+
+  function computeStatus(item: ScheduleItem): { isNow: boolean } {
+    const start = new Date(item.starts_at).getTime();
+    const end = item.ends_at ? new Date(item.ends_at).getTime() : null;
+    const isNow = start <= nowMs && (end === null ? nowMs - start < 3600_000 : nowMs <= end);
+    return { isNow };
   }
 
   const upcomingGroups = groupByDate(upcoming);
@@ -549,15 +573,26 @@ export default function SchedulePage() {
                       )}
                     </div>
                     <ul className="flex flex-col gap-2">
-                      {dayItems.map((item) => (
-                        <ScheduleRow
-                          key={item.id}
-                          item={item}
-                          isAdmin={isAdmin}
-                          onEdit={setEditItem}
-                          onDelete={handleDelete}
-                        />
-                      ))}
+                      {(() => {
+                        const withStatus = dayItems.map((item) => ({
+                          ...item,
+                          ...computeStatus(item),
+                        }));
+                        const firstNextIdx = withStatus.findIndex(
+                          (item) => !item.isNow && new Date(item.starts_at).getTime() > nowMs
+                        );
+                        return withStatus.map((item, idx) => (
+                          <ScheduleRow
+                            key={item.id}
+                            item={item}
+                            isAdmin={isAdmin}
+                            isNow={item.isNow}
+                            isNext={idx === firstNextIdx}
+                            onEdit={setEditItem}
+                            onDelete={handleDelete}
+                          />
+                        ));
+                      })()}
                     </ul>
                   </section>
                 );
