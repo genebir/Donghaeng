@@ -253,7 +253,18 @@ function MemberRow({
               <span className="rounded bg-ocean/10 px-1.5 py-0.5 text-caption font-medium text-ocean">파트장</span>
             )}
           </div>
-          <span className="truncate text-body-sm text-ink-mute">{member.user.email}</span>
+          {member.emergency_info?.phone ? (
+            <a
+              href={`tel:${member.emergency_info.phone.replace(/\s/g, "")}`}
+              className="truncate text-body-sm text-ocean hover:underline"
+            >
+              {member.emergency_info.phone}
+            </a>
+          ) : (
+            <span className="truncate text-body-sm text-ink-mute">
+              {member.user.email.includes("@noemail.local") ? "카카오 로그인" : member.user.email}
+            </span>
+          )}
         </div>
         <div className="flex flex-shrink-0 flex-col items-end gap-1.5">
           <span className={cn("rounded px-2 py-0.5 text-caption font-medium", ROLE_STYLE[member.role])}>
