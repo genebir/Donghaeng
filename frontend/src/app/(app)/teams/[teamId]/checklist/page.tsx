@@ -281,6 +281,7 @@ export default function ChecklistPage() {
   const [loading, setLoading] = useState(true);
   const [addingCategory, setAddingCategory] = useState<ChecklistCategory | null>(null);
   const [addResetKey, setAddResetKey] = useState(0);
+  const [hideDone, setHideDone] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
@@ -381,8 +382,22 @@ export default function ChecklistPage() {
       )}
 
       <header className="mb-8">
-        <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">팀</p>
-        <h1 className="font-display mt-1 text-h1">준비물</h1>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">팀</p>
+            <h1 className="font-display mt-1 text-h1">준비물</h1>
+          </div>
+          {done > 0 && (
+            <button
+              onClick={() => setHideDone((v) => !v)}
+              className={`mt-2 flex-shrink-0 rounded-full px-3 py-1 text-caption font-medium transition-colors ${
+                hideDone ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10 hover:text-ink"
+              }`}
+            >
+              {hideDone ? "완료 보기" : "완료 숨기기"}
+            </button>
+          )}
+        </div>
         {total > 0 && <div className="mt-4"><ProgressBar done={done} total={total} /></div>}
       </header>
 
@@ -392,6 +407,7 @@ export default function ChecklistPage() {
         <div className="flex flex-col gap-8">
           {allCategories.map(({ category, label, items: catItems }) => {
             const catDone = catItems.filter((i) => i.status === "done").length;
+            const visibleItems = hideDone ? catItems.filter((i) => i.status !== "done") : catItems;
             const isAdding = addingCategory === category;
             if (catItems.length === 0 && !isAdding) {
               // Show collapsed "+" only
@@ -416,10 +432,16 @@ export default function ChecklistPage() {
                   </button>
                 </div>
                 <ul className="flex flex-col gap-2">
-                  {catItems.map((item) => (
+                  {visibleItems.map((item) => (
                     <ChecklistRow key={item.id} item={item}
                       onToggle={handleToggle} onDelete={handleDelete} onEdit={handleEdit} />
                   ))}
+                  {hideDone && catDone > 0 && visibleItems.length === 0 && !isAdding && (
+                    <li className="text-caption text-ink-mute py-1">{catDone}개 완료됨</li>
+                  )}
+                  {hideDone && catDone > 0 && visibleItems.length > 0 && (
+                    <li className="text-caption text-ink-mute py-1">{catDone}개 완료됨 (숨김)</li>
+                  )}
                   {isAdding && (
                     <li>
                       <AddItemForm
