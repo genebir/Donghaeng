@@ -6,7 +6,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 async function getShareData(slug: string): Promise<SharePageData | null> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/share/${slug}`, {
-      next: { revalidate: 60 }, // 1분 캐시
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -44,11 +44,15 @@ function formatDate(iso: string) {
   });
 }
 
+function formatTripDate(iso: string) {
+  return new Date(iso).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+}
+
 // ── 픽셀 십자가 SVG ──────────────────────────────────────────────────────────
 
-function PixelCross() {
+function PixelCross({ size = 40 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 40 40" width="40" height="40" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <svg viewBox="0 0 40 40" width={size} height={size} xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <rect x="16" y="4" width="8" height="32" fill="var(--coral)" />
       <rect x="4" y="14" width="32" height="8" fill="var(--coral)" />
     </svg>
@@ -67,6 +71,16 @@ function PixelDots() {
         <rect key={i} x={x} y={y} width="6" height="6" fill="var(--ci-gray)" />
       ))}
     </svg>
+  );
+}
+
+function PixelDivider({ count = 12 }: { count?: number }) {
+  return (
+    <div className="flex gap-1.5">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="h-1 w-1 bg-ink/15" />
+      ))}
+    </div>
   );
 }
 
@@ -92,7 +106,8 @@ export default async function SharePage({ params }: Props) {
     );
   }
 
-  const { team, updates } = data;
+  const { team, updates, testimonies } = data;
+  const hasDates = team.starts_on || team.ends_on;
 
   return (
     <>
@@ -105,8 +120,18 @@ export default async function SharePage({ params }: Props) {
               <h1 className="font-display mt-2 text-h1 text-paper leading-tight">
                 {team.name}
               </h1>
+
+              {/* 날짜 배지 */}
+              {hasDates && (
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-sm border border-ci-gray/30 px-3 py-1 text-body-sm text-ci-gray">
+                  {team.starts_on && formatTripDate(team.starts_on)}
+                  {team.starts_on && team.ends_on && <span className="text-ci-gray/40">–</span>}
+                  {team.ends_on && formatTripDate(team.ends_on)}
+                </p>
+              )}
+
               {team.description && (
-                <p className="mt-3 max-w-prose text-body text-ci-gray">{team.description}</p>
+                <p className="mt-4 max-w-prose text-body text-ci-gray">{team.description}</p>
               )}
             </div>
             <div className="flex-shrink-0 hidden sm:block">
@@ -115,7 +140,7 @@ export default async function SharePage({ params }: Props) {
           </div>
 
           <div className="mt-8 flex items-center gap-3">
-            <PixelCross />
+            <PixelCross size={32} />
             <p className="text-body-sm text-ci-gray/80">
               이 팀을 위해 기도해주세요.
             </p>
@@ -138,6 +163,7 @@ export default async function SharePage({ params }: Props) {
       <main className="min-h-screen bg-paper px-5 py-10 md:py-16">
         <div className="mx-auto max-w-[720px]">
 
+          {/* 소식 섹션 */}
           {updates.length === 0 ? (
             <div className="py-16 text-center">
               <p className="text-body text-ink-mute">아직 공유된 소식이 없어요.</p>
@@ -147,32 +173,48 @@ export default async function SharePage({ params }: Props) {
             <div className="flex flex-col gap-10">
               {updates.map((update, i) => (
                 <article key={update.id}>
-                  {/* 날짜 overline */}
                   {update.published_at && (
                     <p className="text-overline uppercase tracking-[0.12em] text-ink-mute mb-3">
                       {formatDate(update.published_at)}
                     </p>
                   )}
-
                   <h2 className="font-display text-h2 text-ink leading-snug">
                     {update.title}
                   </h2>
-
                   <p className="mt-4 text-body text-ink-soft whitespace-pre-wrap leading-relaxed max-w-prose">
                     {update.content}
                   </p>
-
-                  {/* 픽셀 구분선 (마지막 제외) */}
                   {i < updates.length - 1 && (
-                    <div className="mt-10 flex gap-1.5">
-                      {[...Array(12)].map((_, j) => (
-                        <div key={j} className="h-1 w-1 bg-ink/15" />
-                      ))}
+                    <div className="mt-10">
+                      <PixelDivider />
                     </div>
                   )}
                 </article>
               ))}
             </div>
+          )}
+
+          {/* 특선 간증 섹션 */}
+          {testimonies.length > 0 && (
+            <section className="mt-16 border-t border-ink/10 pt-12">
+              <p className="text-overline uppercase tracking-[0.12em] text-ink-mute mb-2">현장의 목소리</p>
+              <h2 className="font-display text-h2 text-ink mb-8">간증 · 기도제목</h2>
+              <div className="flex flex-col gap-6">
+                {testimonies.map((t) => (
+                  <blockquote key={t.id} className="relative pl-5 border-l-2 border-coral/40">
+                    {t.kind === "testimony" ? (
+                      <span className="inline-block mb-2 rounded-sm border border-coral/40 px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-coral">간증</span>
+                    ) : (
+                      <span className="inline-block mb-2 rounded-sm border border-ocean/40 px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-ocean">기도제목</span>
+                    )}
+                    <p className="text-body text-ink-soft whitespace-pre-wrap leading-relaxed">{t.content}</p>
+                    {t.submitted_name && (
+                      <footer className="mt-2 text-caption text-ink-mute">— {t.submitted_name}</footer>
+                    )}
+                  </blockquote>
+                ))}
+              </div>
+            </section>
           )}
         </div>
       </main>
@@ -181,7 +223,7 @@ export default async function SharePage({ params }: Props) {
       <footer className="bg-midnight px-5 py-8">
         <div className="mx-auto max-w-[720px]">
           <div className="flex items-center gap-4">
-            <PixelCross />
+            <PixelCross size={32} />
             <div>
               <p className="text-body-sm text-ci-gray">동행. · 우리들교회 단기선교 플랫폼</p>
               <p className="mt-0.5 text-caption text-ci-gray/50">

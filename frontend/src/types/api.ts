@@ -180,8 +180,17 @@ export interface SharePageData {
     name: string;
     slug: string;
     description: string | null;
+    starts_on: string | null;
+    ends_on: string | null;
   };
   updates: HomeUpdatePublic[];
+  testimonies: {
+    id: string;
+    kind: "testimony" | "prayer_request";
+    content: string;
+    submitted_name: string | null;
+    created_at: string;
+  }[];
 }
 
 // ── 정산 ─────────────────────────────────────────────────────────────────────

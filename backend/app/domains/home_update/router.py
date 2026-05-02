@@ -13,6 +13,7 @@ from app.domains.home_update.schemas import (
     HomeUpdatePublic,
     HomeUpdateUpdate,
 )
+from app.domains.testimony.models import Testimony, TestimonyVisibility
 
 # /api/v1/teams/{team_id}/home-updates
 nested_router = APIRouter(
@@ -116,6 +117,23 @@ async def delete_home_update(
 @public_router.get("/{slug}")
 async def get_public_share(slug: str, db: DbSession) -> dict[str, Any]:
     team, updates = await service.list_public(db, slug)
+
+    # 공개·특선 간증만 반환 (익명 포함)
+    testimonies = list(
+        (
+            await db.execute(
+                select(Testimony)
+                .where(
+                    Testimony.team_id == team.id,
+                    Testimony.visibility == TestimonyVisibility.PUBLIC,
+                    Testimony.is_featured.is_(True),
+                )
+                .order_by(Testimony.created_at.desc())
+                .limit(10)
+            )
+        ).scalars()
+    )
+
     return {
         "data": {
             "team": {
@@ -123,7 +141,19 @@ async def get_public_share(slug: str, db: DbSession) -> dict[str, Any]:
                 "name": team.name,
                 "slug": team.slug,
                 "description": team.description,
+                "starts_on": team.starts_on.isoformat() if team.starts_on else None,
+                "ends_on": team.ends_on.isoformat() if team.ends_on else None,
             },
             "updates": [_to_dict(u) for u in updates],
+            "testimonies": [
+                {
+                    "id": str(t.id),
+                    "kind": t.kind.value,
+                    "content": t.content,
+                    "submitted_name": t.submitted_name,
+                    "created_at": t.created_at.isoformat(),
+                }
+                for t in testimonies
+            ],
         }
     }
