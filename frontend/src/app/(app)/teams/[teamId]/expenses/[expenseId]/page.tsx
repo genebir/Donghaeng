@@ -207,6 +207,11 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 function RejectModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (r: string) => void }) {
   const [reason, setReason] = useState("");
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4">
       <div className="w-full max-w-md rounded-md border border-ink/15 bg-paper p-6">
