@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
@@ -124,6 +124,7 @@ function BudgetEditModal({
 
   const [amounts, setAmounts] = useState<Record<string, string>>(initAmounts);
   const [active, setActive] = useState<Set<ExpenseCategory>>(initActive);
+  const inputRefs = useRef<Partial<Record<ExpenseCategory, HTMLInputElement | null>>>({});
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -139,6 +140,7 @@ function BudgetEditModal({
         setAmounts((a) => ({ ...a, [cat]: "0" }));
       } else {
         next.add(cat);
+        setTimeout(() => inputRefs.current[cat]?.focus(), 0);
       }
       return next;
     });
@@ -191,6 +193,7 @@ function BudgetEditModal({
                 </span>
                 <div className="relative flex-1">
                   <input
+                    ref={(el) => { inputRefs.current[cat] = el; }}
                     type="number"
                     value={active.has(cat) ? amounts[cat] ?? "" : ""}
                     onChange={(e) => setAmounts((a) => ({ ...a, [cat]: e.target.value }))}
