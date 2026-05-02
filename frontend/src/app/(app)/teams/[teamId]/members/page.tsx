@@ -45,7 +45,7 @@ function MemberRow({
 }: {
   member: Member;
   isAdmin: boolean;
-  onUpdate: (id: string, patch: Partial<{ role: TeamRole; part: TeamPart | null; is_part_lead: boolean }>) => void;
+  onUpdate: (id: string, patch: Partial<{ role: TeamRole; part: TeamPart | null; is_part_lead: boolean }>) => Promise<boolean>;
   onRemove: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -57,13 +57,13 @@ function MemberRow({
 
   async function save() {
     setSaving(true);
-    await onUpdate(member.id, {
+    const ok = await onUpdate(member.id, {
       role,
       part: part || null,
       is_part_lead: isPartLead,
     });
     setSaving(false);
-    setEditing(false);
+    if (ok) setEditing(false);
   }
 
   return (
@@ -160,6 +160,12 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const showToast = useCallback((msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   // 추가 폼
   const [searchQuery, setSearchQuery] = useState("");
@@ -206,22 +212,39 @@ export default function MembersPage() {
   async function handleUpdate(
     memberId: string,
     patch: Partial<{ role: TeamRole; part: TeamPart | null; is_part_lead: boolean }>,
-  ) {
-    const res = await fetch(`/api/team-members/${memberId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    if (res.ok) {
+  ): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/team-members/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
       const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message ?? "수정에 실패했어요.", false);
+        return false;
+      }
       setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, ...data.data } : m)));
+      showToast("수정됐어요.", true);
+      return true;
+    } catch {
+      showToast("잠깐 문제가 있었어요.", false);
+      return false;
     }
   }
 
   async function handleRemove(memberId: string) {
-    const res = await fetch(`/api/team-members/${memberId}`, { method: "DELETE" });
-    if (res.ok || res.status === 204) {
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+    const backup = members;
+    setMembers((prev) => prev.filter((m) => m.id !== memberId));
+    try {
+      const res = await fetch(`/api/team-members/${memberId}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) {
+        setMembers(backup);
+        showToast("제거에 실패했어요.", false);
+      }
+    } catch {
+      setMembers(backup);
+      showToast("잠깐 문제가 있었어요.", false);
     }
   }
 
@@ -281,6 +304,11 @@ export default function MembersPage() {
 
   return (
     <div className="mx-auto max-w-[720px]">
+      {toast && (
+        <div className={`fixed right-5 top-5 z-50 rounded-md border-l-2 bg-ink px-5 py-3 text-body-sm text-paper shadow-lg ${toast.ok ? "border-l-sage" : "border-l-rust"}`}>
+          {toast.msg}
+        </div>
+      )}
       <header className="mb-8 flex items-center justify-between">
         <div>
           <p className="tracking-overline text-overline uppercase text-ink-mute">팀</p>
