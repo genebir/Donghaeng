@@ -39,11 +39,13 @@ interface ScheduleItem {
 
 interface ChecklistItem {
   id: string;
+  title: string;
   status: string;
 }
 
 interface ExpenseItem {
   id: string;
+  description: string;
   amount: string;
   currency: string;
   status: string;
@@ -82,6 +84,18 @@ function formatTime(dt: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function calcDDay(starts_on: string | null): { label: string; style: string } | null {
+  if (!starts_on) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(starts_on);
+  target.setHours(0, 0, 0, 0);
+  const diff = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return { label: "D-DAY", style: "bg-coral text-paper" };
+  if (diff > 0) return { label: `D-${diff}`, style: "bg-ink text-paper" };
+  return { label: `D+${Math.abs(diff)}`, style: "bg-ink-mute/15 text-ink-mute" };
 }
 
 function formatKRW(amount: string): string {
@@ -172,6 +186,9 @@ export default async function TeamHomePage({ params }: Props) {
   // 검토 대기 지출
   const pendingExpenseCount = expenses.filter((e) => e.status === "pending").length;
 
+  // D-day
+  const dday = calcDDay(team.starts_on);
+
   return (
     <div className="mx-auto max-w-[860px]">
       {/* ── 팀 헤더 ──────────────────────────────────────────────────────── */}
@@ -192,11 +209,18 @@ export default async function TeamHomePage({ params }: Props) {
             )}
           </div>
 
-          <span
-            className={`mt-1 rounded px-2.5 py-1 text-body-sm font-medium ${STATUS_STYLE[team.status] ?? ""}`}
-          >
-            {STATUS_LABEL[team.status] ?? team.status}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span
+              className={`rounded px-2.5 py-1 text-body-sm font-medium ${STATUS_STYLE[team.status] ?? ""}`}
+            >
+              {STATUS_LABEL[team.status] ?? team.status}
+            </span>
+            {dday && team.status !== "finished" && team.status !== "archived" && (
+              <span className={`rounded px-3 py-1 text-body-sm font-bold tracking-wide ${dday.style}`}>
+                {dday.label}
+              </span>
+            )}
+          </div>
         </div>
 
         {team.description && (
@@ -311,7 +335,7 @@ export default async function TeamHomePage({ params }: Props) {
                   .map((c) => (
                     <li key={c.id} className="flex items-center gap-2 text-body-sm text-ink-soft">
                       <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-ink-mute" />
-                      {(c as unknown as { title: string }).title}
+                      {c.title}
                     </li>
                   ))}
                 {checklist.filter((c) => c.status !== "done").length > 3 && (
@@ -333,7 +357,7 @@ export default async function TeamHomePage({ params }: Props) {
               {expenses.slice(0, 4).map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-2">
                   <span className="truncate text-body-sm text-ink-soft">
-                    {(e as unknown as { description: string }).description}
+                    {e.description}
                   </span>
                   <span className="flex-shrink-0 text-body-sm font-medium text-ink">
                     {formatKRW(e.amount)}
