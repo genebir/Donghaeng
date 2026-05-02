@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 interface NavItem {
   href: string;
@@ -252,9 +253,9 @@ function DashboardSidebar({ pathname }: { pathname: string }) {
 
 // ── 팀 사이드바 ─────────────────────────────────────────────────────────
 
-function buildTeamNavGroups(teamId: string): NavGroup[] {
+function buildTeamNavGroups(teamId: string, isAdmin: boolean): NavGroup[] {
   const base = `/teams/${teamId}`;
-  return [
+  const groups: NavGroup[] = [
     {
       items: [{ href: base, label: "팀 홈", icon: <IconGrid />, exact: true }],
     },
@@ -276,29 +277,34 @@ function buildTeamNavGroups(teamId: string): NavGroup[] {
           href: `${base}/expenses`,
           label: "지출",
           icon: <IconReceipt />,
-          // expenses/review is a sibling section — don't highlight "지출" when there
           isActiveCheck: (p) =>
             p === `${base}/expenses` ||
             (p.startsWith(`${base}/expenses/`) && !p.startsWith(`${base}/expenses/review`)),
         },
-        { href: `${base}/expenses/review`, label: "지출 검토", icon: <IconClipboardCheck /> },
-        { href: `${base}/budget`,          label: "예산",     icon: <IconWallet /> },
-        { href: `${base}/reimbursements`,  label: "정산",     icon: <IconSend /> },
-        { href: `${base}/reports`,         label: "리포트",   icon: <IconBarChart /> },
+        ...(isAdmin ? [
+          { href: `${base}/expenses/review`, label: "지출 검토", icon: <IconClipboardCheck /> },
+          { href: `${base}/budget`,          label: "예산",     icon: <IconWallet /> },
+          { href: `${base}/reimbursements`,  label: "정산",     icon: <IconSend /> },
+          { href: `${base}/reports`,         label: "리포트",   icon: <IconBarChart /> },
+        ] : []),
       ],
     },
-    {
+  ];
+  if (isAdmin) {
+    groups.push({
       label: "관리",
       items: [
         { href: `${base}/share-settings`, label: "공유 설정", icon: <IconShare /> },
         { href: `${base}/settings`,        label: "팀 설정",   icon: <IconSettings /> },
       ],
-    },
-  ];
+    });
+  }
+  return groups;
 }
 
 function TeamSidebar({ teamId, pathname }: { teamId: string; pathname: string }) {
-  const groups = buildTeamNavGroups(teamId);
+  const { isAdmin } = useTeamRole();
+  const groups = buildTeamNavGroups(teamId, isAdmin);
   return (
     <aside className="hidden w-60 flex-shrink-0 flex-col border-r border-ink/10 bg-paper md:flex">
       {/* 대시보드로 돌아가기 */}

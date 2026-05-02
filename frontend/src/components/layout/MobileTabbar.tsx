@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 interface Tab {
   href: string;
@@ -177,9 +178,9 @@ interface DrawerGroup {
   items: DrawerItem[];
 }
 
-function buildDrawerGroups(teamId: string): DrawerGroup[] {
+function buildDrawerGroups(teamId: string, isAdmin: boolean): DrawerGroup[] {
   const base = `/teams/${teamId}`;
-  return [
+  const groups: DrawerGroup[] = [
     {
       label: "활동",
       items: [
@@ -188,23 +189,28 @@ function buildDrawerGroups(teamId: string): DrawerGroup[] {
         { href: `${base}/home-updates`, label: "본진 소식", icon: <DIconMegaphone /> },
       ],
     },
-    {
-      label: "회계",
-      items: [
-        { href: `${base}/expenses/review`, label: "지출 검토", icon: <DIconClipboardCheck /> },
-        { href: `${base}/budget`,          label: "예산",      icon: <DIconWallet /> },
-        { href: `${base}/reimbursements`,  label: "정산",      icon: <DIconSend /> },
-        { href: `${base}/reports`,         label: "리포트",    icon: <DIconBarChart /> },
-      ],
-    },
-    {
-      label: "관리",
-      items: [
-        { href: `${base}/share-settings`, label: "공유 설정", icon: <DIconShare /> },
-        { href: `${base}/settings`,        label: "팀 설정",   icon: <DIconSettings /> },
-      ],
-    },
   ];
+  if (isAdmin) {
+    groups.push(
+      {
+        label: "회계",
+        items: [
+          { href: `${base}/expenses/review`, label: "지출 검토", icon: <DIconClipboardCheck /> },
+          { href: `${base}/budget`,          label: "예산",      icon: <DIconWallet /> },
+          { href: `${base}/reimbursements`,  label: "정산",      icon: <DIconSend /> },
+          { href: `${base}/reports`,         label: "리포트",    icon: <DIconBarChart /> },
+        ],
+      },
+      {
+        label: "관리",
+        items: [
+          { href: `${base}/share-settings`, label: "공유 설정", icon: <DIconShare /> },
+          { href: `${base}/settings`,        label: "팀 설정",   icon: <DIconSettings /> },
+        ],
+      }
+    );
+  }
+  return groups;
 }
 
 const DASHBOARD_TABS: Tab[] = [
@@ -235,9 +241,10 @@ export function MobileTabbar() {
   const params = useParams();
   const teamId = params?.teamId as string | undefined;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isAdmin } = useTeamRole();
 
   const tabs = teamId ? buildTeamTabs(teamId) : DASHBOARD_TABS;
-  const drawerGroups = teamId ? buildDrawerGroups(teamId) : [];
+  const drawerGroups = teamId ? buildDrawerGroups(teamId, isAdmin) : [];
 
   useEffect(() => {
     if (!drawerOpen) return;
