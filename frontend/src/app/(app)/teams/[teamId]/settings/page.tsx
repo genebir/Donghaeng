@@ -232,6 +232,12 @@ export default function TeamSettingsPage() {
             <textarea
               value={teamForm.description}
               onChange={(e) => setTeamForm((f) => ({ ...f, description: e.target.value }))}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !teamSaving) {
+                  e.preventDefault();
+                  handleSaveTeam(e as unknown as React.FormEvent);
+                }
+              }}
               rows={3}
               placeholder="팀에 대한 간단한 설명"
               className={inputClass + " resize-none"}
@@ -305,6 +311,12 @@ export default function TeamSettingsPage() {
             <textarea
               value={destForm.notes}
               onChange={(e) => setDestForm((f) => ({ ...f, notes: e.target.value }))}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !destSaving) {
+                  e.preventDefault();
+                  handleSaveDest(e as unknown as React.FormEvent);
+                }
+              }}
               rows={3}
               placeholder="예: 섬 지역으로 배편 필요, 숙소 교회 내 마련"
               className={inputClass + " resize-none"}

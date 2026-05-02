@@ -479,6 +479,7 @@ export default function TestimoniesPage() {
             onChange={(e) => setFormContent(e.target.value)}
             placeholder={formKind === "testimony" ? "하나님이 행하신 일을 나눠주세요." : "함께 기도할 제목을 적어주세요."}
             rows={5}
+            autoFocus
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && formContent.trim() && !busy) {
                 e.preventDefault();
