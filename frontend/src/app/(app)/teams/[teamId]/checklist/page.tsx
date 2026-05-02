@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { ChecklistCategory, ChecklistItemPublic, ChecklistStatus } from "@/types/api";
 
@@ -109,8 +109,8 @@ function ChecklistRow({
   onDelete: (id: string) => void;
   onEdit: (id: string, patch: Partial<ChecklistItemPublic>) => Promise<void>;
 }) {
-  const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
   const next = STATUS_NEXT[item.status];
 
   if (editing) {
@@ -126,11 +126,7 @@ function ChecklistRow({
   }
 
   return (
-    <li
-      className="group flex items-start gap-3 rounded-md border border-ink/10 bg-paper p-4 transition-colors hover:border-ink/25"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
+    <li className="group flex items-start gap-3 rounded-md border border-ink/10 bg-paper p-4 transition-colors hover:border-ink/25">
       {/* 상태 토글 버튼 */}
       <button
         onClick={() => onToggle(item.id, next)}
@@ -163,20 +159,32 @@ function ChecklistRow({
         {item.notes && <p className="mt-1 text-body-sm text-ink-mute">{item.notes}</p>}
       </div>
 
-      {/* 수정 / 삭제 버튼 (호버 시만 표시) */}
-      <div className={`flex flex-shrink-0 items-center gap-1 transition-opacity ${hovered ? "opacity-100" : "opacity-0"} focus-within:opacity-100`}>
-        <button onClick={() => setEditing(true)} aria-label="수정"
-          className="rounded p-1 text-ink-mute hover:text-ink">
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M10.5 1.5l2 2-8 8H2.5v-2l8-8z" />
-          </svg>
-        </button>
-        <button onClick={() => onDelete(item.id)} aria-label="삭제"
-          className="rounded p-1 text-ink-mute hover:text-rust">
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-            <path d="M2 3.5h10M5.5 3.5V2.5h3v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 8h6.6l.7-8" />
-          </svg>
-        </button>
+      {/* 수정 / 삭제 버튼 — 모바일 상시 표시, 데스크톱 호버 시 표시 */}
+      <div className="flex flex-shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus-within:!opacity-100">
+        {confirmDel ? (
+          <div className="flex items-center gap-1.5 rounded-md border border-rust/30 bg-rust/5 px-2 py-1">
+            <span className="text-caption text-rust">삭제?</span>
+            <button onClick={() => onDelete(item.id)}
+              className="text-caption font-semibold text-rust hover:underline">예</button>
+            <button onClick={() => setConfirmDel(false)}
+              className="text-caption text-ink-mute hover:text-ink">취소</button>
+          </div>
+        ) : (
+          <>
+            <button onClick={() => setEditing(true)} aria-label="수정"
+              className="rounded p-1 text-ink-mute hover:text-ink">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M10.5 1.5l2 2-8 8H2.5v-2l8-8z" />
+              </svg>
+            </button>
+            <button onClick={() => setConfirmDel(true)} aria-label="삭제"
+              className="rounded p-1 text-ink-mute hover:text-rust">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+                <path d="M2 3.5h10M5.5 3.5V2.5h3v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 8h6.6l.7-8" />
+              </svg>
+            </button>
+          </>
+        )}
       </div>
     </li>
   );

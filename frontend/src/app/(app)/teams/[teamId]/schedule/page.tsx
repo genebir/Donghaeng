@@ -24,6 +24,10 @@ const KIND_LABEL: Record<ScheduleKind, string> = {
   TRANSPORT: "이동", DEBRIEF: "디브리핑", FREE: "자유", OTHER: "기타",
 };
 const KIND_OPTIONS = Object.entries(KIND_LABEL) as [ScheduleKind, string][];
+const KIND_EMOJI: Record<ScheduleKind, string> = {
+  WORSHIP: "🙏", VBS: "📖", MEAL: "🍽️",
+  TRANSPORT: "🚌", DEBRIEF: "💬", FREE: "🌿", OTHER: "📌",
+};
 
 const KIND_DOT: Record<ScheduleKind, string> = {
   WORSHIP: "bg-coral", VBS: "bg-ocean", MEAL: "bg-sage",
@@ -124,27 +128,43 @@ function ScheduleForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-caption text-ink-mute">종류</label>
-          <select
-            value={form.kind}
-            onChange={(e) => set("kind", e.target.value as ScheduleKind | "")}
-            className="rounded-md border border-ink/20 bg-paper px-3 py-2 text-body-sm text-ink focus:border-ink focus:outline-none"
+      <div className="flex flex-col gap-1">
+        <label className="text-caption text-ink-mute">종류 (선택)</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {/* 선택 없음 */}
+          <button
+            type="button"
+            onClick={() => set("kind", "")}
+            className={`rounded-lg py-2 text-caption font-medium transition-colors ${
+              form.kind === "" ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"
+            }`}
           >
-            <option value="">— 선택 —</option>
-            {KIND_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+            없음
+          </button>
+          {KIND_OPTIONS.map(([v, l]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => set("kind", v)}
+              className={`flex flex-col items-center gap-0.5 rounded-lg py-2 px-1 text-center transition-colors ${
+                form.kind === v ? "bg-ink text-paper" : "bg-paper-deep text-ink-mute hover:bg-ink/10"
+              }`}
+            >
+              <span className="text-base leading-none">{KIND_EMOJI[v]}</span>
+              <span className="text-caption leading-tight">{l}</span>
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-caption text-ink-mute">장소</label>
-          <input
-            value={form.location}
-            onChange={(e) => set("location", e.target.value)}
-            placeholder="예: 본교회 본당"
-            className="rounded-md border border-ink/20 bg-paper px-3 py-2 text-body-sm text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
-          />
-        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-caption text-ink-mute">장소</label>
+        <input
+          value={form.location}
+          onChange={(e) => set("location", e.target.value)}
+          placeholder="예: 본교회 본당"
+          className="rounded-md border border-ink/20 bg-paper px-3 py-2 text-body-sm text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
+        />
       </div>
 
       <textarea

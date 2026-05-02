@@ -206,9 +206,19 @@ function QrPanel({ teamId }: { teamId: string }) {
 
 // ── 간증 카드 ─────────────────────────────────────────────────────────────
 
-function TestimonyCard({ t }: { t: Testimony }) {
+function TestimonyCard({
+  t,
+  onToggleFeatured,
+  onDelete,
+}: {
+  t: Testimony;
+  onToggleFeatured?: (id: string, next: boolean) => void;
+  onDelete?: (id: string) => void;
+}) {
+  const [confirmDel, setConfirmDel] = useState(false);
+
   return (
-    <article className="rounded-md border border-ink/10 bg-paper p-5">
+    <article className="group rounded-md border border-ink/10 bg-paper p-5">
       <div className="mb-2 flex items-start gap-2 flex-wrap">
         <span className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide ${KIND_CHIP[t.kind]}`}>
           {KIND_LABEL[t.kind]}
@@ -227,6 +237,40 @@ function TestimonyCard({ t }: { t: Testimony }) {
         <p className="text-body-sm font-medium text-ink-soft mb-1">{t.submitted_name}</p>
       )}
       <p className="text-body-sm text-ink whitespace-pre-wrap">{t.content}</p>
+
+      {/* 관리 버튼 */}
+      {(onToggleFeatured || onDelete) && (
+        <div className="mt-3 flex items-center gap-2 border-t border-ink/8 pt-3">
+          {onToggleFeatured && (
+            <button
+              onClick={() => onToggleFeatured(t.id, !t.is_featured)}
+              className={`inline-flex h-7 items-center rounded px-2.5 text-caption font-medium transition-colors ${
+                t.is_featured
+                  ? "bg-mustard/15 text-mustard hover:bg-mustard/25"
+                  : "bg-ink/5 text-ink-mute hover:bg-mustard/10 hover:text-mustard"
+              }`}
+            >
+              {t.is_featured ? "★ 주목 해제" : "☆ 주목"}
+            </button>
+          )}
+          {onDelete && (
+            confirmDel ? (
+              <div className="flex items-center gap-2 rounded-md border border-rust/30 bg-rust/5 px-2.5 py-1">
+                <span className="text-caption text-rust">삭제할까요?</span>
+                <button onClick={() => onDelete(t.id)}
+                  className="text-caption font-semibold text-rust hover:underline">삭제</button>
+                <button onClick={() => setConfirmDel(false)}
+                  className="text-caption text-ink-mute hover:text-ink">취소</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDel(true)}
+                className="ml-auto inline-flex h-7 items-center rounded px-2.5 text-caption text-ink-mute hover:text-rust transition-colors">
+                삭제
+              </button>
+            )
+          )}
+        </div>
+      )}
     </article>
   );
 }
@@ -263,6 +307,31 @@ export default function TestimoniesPage() {
   }, [teamId, filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleToggleFeatured = async (id: string, next: boolean) => {
+    setTestimonies((prev) => prev.map((t) => t.id === id ? { ...t, is_featured: next } : t));
+    const res = await fetch(`/api/testimony/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_featured: next }),
+    });
+    if (!res.ok) {
+      setTestimonies((prev) => prev.map((t) => t.id === id ? { ...t, is_featured: !next } : t));
+      showToast("변경에 실패했어요.", false);
+    }
+  };
+
+  const handleDeleteTestimony = async (id: string) => {
+    const backup = testimonies;
+    setTestimonies((prev) => prev.filter((t) => t.id !== id));
+    const res = await fetch(`/api/testimony/${id}`, { method: "DELETE" });
+    if (!res.ok && res.status !== 204) {
+      setTestimonies(backup);
+      showToast("삭제에 실패했어요.", false);
+    } else {
+      showToast("삭제됐어요.", true);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -383,7 +452,14 @@ export default function TestimoniesPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {testimonies.map((t) => <TestimonyCard key={t.id} t={t} />)}
+          {testimonies.map((t) => (
+            <TestimonyCard
+              key={t.id}
+              t={t}
+              onToggleFeatured={handleToggleFeatured}
+              onDelete={handleDeleteTestimony}
+            />
+          ))}
         </div>
       )}
     </div>
