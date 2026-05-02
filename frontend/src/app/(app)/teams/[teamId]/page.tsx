@@ -386,7 +386,12 @@ export default async function TeamHomePage({ params }: Props) {
                 <Row label="담당자" value={team.destination.coordinator_name} />
               )}
               {team.destination.coordinator_phone && (
-                <Row label="연락처" value={team.destination.coordinator_phone} />
+                <Row label="연락처" value={
+                  <a href={`tel:${team.destination.coordinator_phone.replace(/\s/g, "")}`}
+                    className="text-ocean hover:underline">
+                    {team.destination.coordinator_phone}
+                  </a>
+                } />
               )}
               {team.destination.timezone && team.destination.timezone !== "Asia/Seoul" && (
                 <Row label="시간대" value={team.destination.timezone} />
@@ -420,7 +425,7 @@ function KpiCard({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex gap-3">
       <dt className="w-16 flex-shrink-0 text-ink-mute">{label}</dt>
