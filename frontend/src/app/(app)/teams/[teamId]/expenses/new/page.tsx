@@ -237,15 +237,15 @@ export default function NewExpensePage() {
         throw new Error(data.message ?? "등록에 실패했습니다.");
       }
 
-      setForm({
+      setForm((prev) => ({
         amount: "",
         description: "",
-        category: "MISC" as typeof CATEGORIES[number]["value"],
-        payment_method: "PERSONAL_CASH" as typeof PAYMENT_METHODS[number]["value"],
+        category: prev.category,
+        payment_method: prev.payment_method,
         vendor: "",
         spent_at: localNow(),
         notes: "",
-      });
+      }));
       setReceiptMediaId(null);
       setSuccessCount((n) => n + 1);
       amountRef.current?.focus();
