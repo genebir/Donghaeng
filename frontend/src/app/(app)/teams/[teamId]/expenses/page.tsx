@@ -41,6 +41,30 @@ function formatDate(dt: string): string {
   return new Date(dt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 }
 
+function dateKey(dt: string): string {
+  return dt.slice(0, 10); // "YYYY-MM-DD"
+}
+
+function formatDateHeader(key: string): string {
+  return new Date(key).toLocaleDateString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+}
+
+function groupByDate(expenses: ExpensePublic[]): { key: string; label: string; items: ExpensePublic[] }[] {
+  const map = new Map<string, ExpensePublic[]>();
+  for (const e of expenses) {
+    const k = dateKey(e.spent_at);
+    if (!map.has(k)) map.set(k, []);
+    map.get(k)!.push(e);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([key, items]) => ({ key, label: formatDateHeader(key), items }));
+}
+
 // ── 컴포넌트 ──────────────────────────────────────────────────────────────
 
 function ExpenseRow({ expense, teamId, isMine }: { expense: ExpensePublic; teamId: string; isMine: boolean }) {
@@ -213,11 +237,24 @@ export default function ExpensesPage() {
               )}
             </div>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {displayed.map((e) => (
-                <ExpenseRow key={e.id} expense={e} teamId={teamId} isMine={tab === "mine" || e.purchaser_user_id === meId} />
+            <div className="flex flex-col gap-6">
+              {groupByDate(displayed).map(({ key, label, items }) => (
+                <section key={key}>
+                  <div className="mb-2 flex items-center gap-3">
+                    <span className="text-caption font-medium text-ink-mute">{label}</span>
+                    <span className="flex-1 h-px bg-ink/8" />
+                    <span className="text-caption text-ink-mute">
+                      {formatKRW(items.filter(e => e.currency === "KRW").reduce((s, e) => s + parseFloat(e.amount), 0))}
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-2">
+                    {items.map((e) => (
+                      <ExpenseRow key={e.id} expense={e} teamId={teamId} isMine={tab === "mine" || e.purchaser_user_id === meId} />
+                    ))}
+                  </ul>
+                </section>
               ))}
-            </ul>
+            </div>
           )}
         </>
       )}
