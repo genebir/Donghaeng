@@ -418,7 +418,10 @@ export default function ExpenseDetailPage() {
   if (!expense) return (
     <div className="mx-auto max-w-[600px] py-16 text-center">
       <p className="text-body text-ink-mute">지출 내역을 찾을 수 없어요.</p>
-      <button onClick={() => router.back()} className="mt-4 text-body-sm text-ocean hover:underline">← 돌아가기</button>
+      <button onClick={() => router.back()} className="mt-4 inline-flex items-center gap-1.5 text-body-sm text-ink-mute hover:text-ink">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M11 7H3M6 4L3 7l3 3" /></svg>
+        돌아가기
+      </button>
     </div>
   );
 

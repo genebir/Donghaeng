@@ -56,7 +56,7 @@ function WriteForm({
   return (
     <form onSubmit={(e) => { e.preventDefault(); doSave(); }} className="rounded-md border border-ink/15 bg-paper p-5">
       <label className="block">
-        <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">제목</span>
+        <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">제목</span>
         <input
           value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="오늘의 소식 제목"
@@ -65,7 +65,7 @@ function WriteForm({
         />
       </label>
       <label className="mt-5 block">
-        <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">내용</span>
+        <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">내용</span>
         <textarea
           value={content} onChange={(e) => setContent(e.target.value)}
           placeholder="오늘 하루 어떠셨나요? 기도제목이나 소식을 나눠주세요."

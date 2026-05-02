@@ -72,7 +72,7 @@ function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
         <h3 className="mb-4 text-h3">송금 완료 처리</h3>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">송금 방법</span>
+            <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">송금 방법</span>
             <div className="mt-3 grid grid-cols-4 gap-2">
               {TRANSFER_METHODS.map((m) => (
                 <button
@@ -89,14 +89,14 @@ function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
             </div>
           </div>
           <label className="block">
-            <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">송금 확인 메모 *</span>
+            <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">송금 확인 메모 *</span>
             <input value={reference} onChange={(e) => setReference(e.target.value)}
               autoFocus
               className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body focus:border-ink focus:outline-none"
               placeholder="예: 7/30 14:23 이체완료" />
           </label>
           <label className="block">
-            <span className="text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">메모 <span className="font-normal normal-case text-ink-mute">(선택)</span></span>
+            <span className="text-caption font-semibold uppercase tracking-overline text-ink-soft">메모 <span className="font-normal normal-case text-ink-mute">(선택)</span></span>
             <input value={notes} onChange={(e) => setNotes(e.target.value)}
               className="mt-2 block w-full border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body focus:border-ink focus:outline-none"
               placeholder="추가 메모" />

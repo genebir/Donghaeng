@@ -36,7 +36,7 @@ interface ProfileData {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="block text-caption font-semibold uppercase tracking-[0.12em] text-ink-soft">
+    <span className="block text-caption font-semibold uppercase tracking-overline text-ink-soft">
       {children}
     </span>
   );
