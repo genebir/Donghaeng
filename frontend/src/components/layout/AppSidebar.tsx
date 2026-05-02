@@ -201,7 +201,7 @@ function NavGroupSection({
   return (
     <div className={cn("flex flex-col gap-0.5", !isFirst && "mt-3")}>
       {group.label && (
-        <p className="mb-0.5 px-3 text-caption font-semibold uppercase tracking-widest text-ink-mute/60">
+        <p className="mb-0.5 px-3 text-caption font-semibold uppercase tracking-overline text-ink-mute/60">
           {group.label}
         </p>
       )}

@@ -292,7 +292,7 @@ export function MobileTabbar() {
             <div className="px-4 pb-8 flex flex-col gap-5">
               {drawerGroups.map((group) => (
                 <div key={group.label}>
-                  <p className="mb-2 px-1 text-caption font-semibold uppercase tracking-widest text-ink-mute/60">
+                  <p className="mb-2 px-1 text-caption font-semibold uppercase tracking-overline text-ink-mute/60">
                     {group.label}
                   </p>
                   <div className="grid grid-cols-4 gap-2">
