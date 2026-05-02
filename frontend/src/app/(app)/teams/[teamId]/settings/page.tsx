@@ -25,7 +25,7 @@ interface TeamDetail {
 
 const STATUS_OPTIONS = [
   { value: "planning", label: "기획 중" },
-  { value: "ongoing", label: "진행 중" },
+  { value: "ongoing",  label: "진행 중" },
   { value: "finished", label: "완료" },
   { value: "archived", label: "보관" },
 ];
@@ -191,17 +191,25 @@ export default function TeamSettingsPage() {
               className={inputClass}
             />
           </Field>
-          <Field label="진행 상태">
-            <select
-              value={teamForm.status}
-              onChange={(e) => setTeamForm((f) => ({ ...f, status: e.target.value }))}
-              className={inputClass}
-            >
+          <div className="flex flex-col gap-1.5">
+            <label className="text-body-sm font-medium text-ink-soft">진행 상태</label>
+            <div className="grid grid-cols-4 gap-2">
               {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => setTeamForm((f) => ({ ...f, status: o.value }))}
+                  className={`rounded-xl py-2.5 px-1 text-caption font-medium text-center transition-colors ${
+                    teamForm.status === o.value
+                      ? "bg-ink text-paper"
+                      : "bg-paper-deep text-ink-soft hover:bg-ink/10 hover:text-ink"
+                  }`}
+                >
+                  {o.label}
+                </button>
               ))}
-            </select>
-          </Field>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="출발일">
               <input

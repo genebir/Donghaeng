@@ -169,6 +169,9 @@ export default async function TeamHomePage({ params }: Props) {
   );
   const weeklyTotal = recentExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
+  // 검토 대기 지출
+  const pendingExpenseCount = expenses.filter((e) => e.status === "pending").length;
+
   return (
     <div className="mx-auto max-w-[860px]">
       {/* ── 팀 헤더 ──────────────────────────────────────────────────────── */}
@@ -222,6 +225,22 @@ export default async function TeamHomePage({ params }: Props) {
           소식 쓰기
         </Link>
       </div>
+
+      {/* ── 검토 대기 배너 ──────────────────────────────────────────────── */}
+      {pendingExpenseCount > 0 && (
+        <Link
+          href={`/teams/${teamId}/expenses/review`}
+          className="mb-6 flex items-center gap-3 rounded-md border border-mustard/30 bg-mustard/8 px-4 py-3 hover:bg-mustard/12 transition-colors"
+        >
+          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-mustard text-[11px] font-bold text-paper">
+            {pendingExpenseCount > 9 ? "9+" : pendingExpenseCount}
+          </span>
+          <p className="flex-1 text-body-sm font-medium text-ink">
+            지출 검토 대기 {pendingExpenseCount}건 — 승인이 필요해요
+          </p>
+          <span className="text-caption text-ink-mute">검토하기 →</span>
+        </Link>
+      )}
 
       {/* ── 요약 KPI ─────────────────────────────────────────────────────── */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
