@@ -392,6 +392,7 @@ export default function MediaPage() {
   }, [assets, showToast]);
 
   const isEmpty = !loading && assets.length === 0 && uploads.length === 0;
+  const [isDragOver, setIsDragOver] = useState(false);
 
   return (
     <div className="mx-auto max-w-[900px]">
@@ -414,7 +415,12 @@ export default function MediaPage() {
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="text-overline uppercase tracking-[0.12em] text-ink-mute">팀 사진</p>
-          <h1 className="font-display mt-1 text-h1">미디어</h1>
+          <h1 className="font-display mt-1 text-h1">
+            미디어
+            {assets.length > 0 && (
+              <span className="ml-2 text-h2 font-normal text-ink-mute">{assets.length}</span>
+            )}
+          </h1>
         </div>
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -453,9 +459,12 @@ export default function MediaPage() {
         </div>
       ) : (
         <div
-          className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={onDrop}
+          className={`grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 rounded-md transition-all ${
+            isDragOver ? "ring-2 ring-ink/30 ring-offset-2" : ""
+          }`}
+          onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={(e) => { setIsDragOver(false); onDrop(e); }}
         >
           {/* 업로드 중 항목 */}
           {uploads.map((item) => (

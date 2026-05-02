@@ -155,7 +155,7 @@ function QrPanel({ teamId }: { teamId: string }) {
       <h2 className="text-h3 font-medium">QR 토큰</h2>
       <p className="mt-1 text-body-sm text-ink-soft">QR 코드를 인쇄해 현장에 붙이면 누구나 기도제목·간증을 남길 수 있어요.</p>
 
-      <div className="mt-4 flex gap-2">
+      <form onSubmit={(e) => { e.preventDefault(); createToken(); }} className="mt-4 flex gap-2">
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -163,13 +163,13 @@ function QrPanel({ teamId }: { teamId: string }) {
           className="flex-1 rounded-md border border-ink/20 bg-transparent px-3 py-2 text-body-sm text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
         />
         <button
-          onClick={createToken}
+          type="submit"
           disabled={busy}
           className="inline-flex h-9 items-center rounded-md bg-ink px-4 text-body-sm font-medium text-paper hover:bg-ink/90 disabled:opacity-50"
         >
           {busy ? "생성 중…" : "+ 생성"}
         </button>
-      </div>
+      </form>
 
       {showQrModal && (
         <QrModal
