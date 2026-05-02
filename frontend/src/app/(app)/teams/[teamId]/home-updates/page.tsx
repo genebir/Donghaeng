@@ -179,6 +179,33 @@ export default function HomeUpdatesPage() {
     } catch { showToast("잠깐 문제가 있었어요.", false); }
   };
 
+  const handleEditAndPublish = async (update: HomeUpdatePublic, title: string, content: string) => {
+    try {
+      const patchRes = await fetch(`/api/home-update/${update.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content, teamId }),
+      });
+      const patchJson = await patchRes.json();
+      if (!patchRes.ok) { showToast(patchJson.message ?? "수정 실패", false); return; }
+
+      const pubRes = await fetch(`/api/home-update/${update.id}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId }),
+      });
+      const pubJson = await pubRes.json();
+      if (!pubRes.ok) {
+        setUpdates((prev) => prev.map((u) => u.id === update.id ? patchJson.data : u));
+        showToast("저장됐지만 발행에 실패했어요.", false);
+      } else {
+        setUpdates((prev) => prev.map((u) => u.id === update.id ? pubJson.data : u));
+        showToast("발행됐어요. 본진 공유 페이지에 표시됩니다.", true);
+      }
+      setEditing(null);
+    } catch { showToast("잠깐 문제가 있었어요.", false); }
+  };
+
   const handleDelete = async (id: string) => {
     setConfirmDeleteId(null);
     const backup = updates;
@@ -259,6 +286,7 @@ export default function HomeUpdatesPage() {
                 <WriteForm
                   initial={u}
                   onSave={(title, content) => handleEdit(u, title, content)}
+                  onPublish={u.status === "draft" ? (title, content) => handleEditAndPublish(u, title, content) : undefined}
                   onCancel={() => setEditing(null)}
                 />
               ) : (
