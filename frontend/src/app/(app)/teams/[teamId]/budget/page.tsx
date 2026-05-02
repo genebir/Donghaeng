@@ -127,10 +127,14 @@ function BudgetEditModal({
   const inputRefs = useRef<Partial<Record<ExpenseCategory, HTMLInputElement | null>>>({});
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !saving) handleSave();
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, saving]);
 
   function toggleCategory(cat: ExpenseCategory) {
     setActive((prev) => {
@@ -197,6 +201,7 @@ function BudgetEditModal({
                     type="number"
                     value={active.has(cat) ? amounts[cat] ?? "" : ""}
                     onChange={(e) => setAmounts((a) => ({ ...a, [cat]: e.target.value }))}
+                    onFocus={(e) => e.target.select()}
                     disabled={!active.has(cat)}
                     placeholder="0"
                     min="0"

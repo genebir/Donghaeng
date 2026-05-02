@@ -300,6 +300,7 @@ export default function NewExpensePage() {
               inputMode="decimal"
               value={form.amount}
               onChange={(e) => set("amount", e.target.value.replace(/[^0-9.]/g, ""))}
+              onFocus={(e) => e.target.select()}
               required
               placeholder="0"
               autoFocus

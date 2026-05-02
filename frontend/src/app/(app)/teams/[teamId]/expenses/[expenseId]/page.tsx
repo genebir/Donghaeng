@@ -137,6 +137,7 @@ function EditForm({ expense, onSave, onCancel }: EditFormProps) {
       <div className="flex flex-col gap-1.5">
         <label className="text-body-sm font-medium text-ink-soft">금액 (원) *</label>
         <input type="number" name="amount" value={form.amount} onChange={handleChange}
+          onFocus={(e) => e.target.select()}
           required min="1" placeholder="10000" className={inputClass} />
       </div>
 
