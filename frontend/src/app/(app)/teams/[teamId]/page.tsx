@@ -168,7 +168,9 @@ export default async function TeamHomePage({ params }: Props) {
 
   const schedule = scheduleItems.status === "fulfilled" ? scheduleItems.value.slice(0, 4) : [];
   const checklist = checklistItems.status === "fulfilled" ? checklistItems.value : [];
-  const expenses = expenseItems.status === "fulfilled" ? expenseItems.value : [];
+  const expenses = expenseItems.status === "fulfilled"
+    ? [...expenseItems.value].sort((a, b) => new Date(b.spent_at).getTime() - new Date(a.spent_at).getTime())
+    : [];
 
   // 준비물 진행률
   const totalItems = checklist.length;
@@ -353,15 +355,18 @@ export default async function TeamHomePage({ params }: Props) {
           {expenses.length === 0 ? (
             <EmptyItem message="등록된 지출이 없습니다." />
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-2">
               {expenses.slice(0, 4).map((e) => (
-                <li key={e.id} className="flex items-center justify-between gap-2">
-                  <span className="truncate text-body-sm text-ink-soft">
-                    {e.description}
-                  </span>
-                  <span className="flex-shrink-0 text-body-sm font-medium text-ink">
-                    {formatKRW(e.amount)}
-                  </span>
+                <li key={e.id}>
+                  <Link href={`/teams/${teamId}/expenses/${e.id}`}
+                    className="flex items-center justify-between gap-2 rounded hover:bg-paper-deep px-1 -mx-1 py-0.5 transition-colors group">
+                    <span className="truncate text-body-sm text-ink-soft group-hover:text-ink">
+                      {e.description}
+                    </span>
+                    <span className="flex-shrink-0 text-body-sm font-medium text-ink">
+                      {formatKRW(e.amount)}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
