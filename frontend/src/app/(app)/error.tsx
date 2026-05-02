@@ -16,7 +16,7 @@ export default function AppError({
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
-      <p className="text-overline uppercase tracking-widest text-ink-mute mb-4">오류</p>
+      <p className="tracking-overline text-overline uppercase text-ink-mute mb-4">오류</p>
       <h1 className="font-display text-h1 mb-2">
         문제가 발생했어요<span className="text-coral">.</span>
       </h1>

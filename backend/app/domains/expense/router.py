@@ -64,6 +64,16 @@ async def bulk_approve_expenses(
     updated = await service.bulk_approve_expenses(
         db, access.team.id, payload.expense_ids, approver_user_id=access.user_id
     )
+    for expense in updated:
+        await notif_service.create_notification(
+            db,
+            recipient_user_id=expense.purchaser_user_id,
+            team_id=expense.team_id,
+            kind=NotificationKind.EXPENSE_APPROVED,
+            title="지출이 승인됐어요",
+            body=expense.description,
+            ref_id=expense.id,
+        )
     return {"data": [_to_dict(e) for e in updated]}
 
 
