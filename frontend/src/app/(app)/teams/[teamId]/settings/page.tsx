@@ -284,6 +284,7 @@ export default function TeamSettingsPage() {
             </Field>
             <Field label="담당자 연락처" optional>
               <input
+                type="tel"
                 value={destForm.coordinator_phone}
                 onChange={(e) => setDestForm((f) => ({ ...f, coordinator_phone: e.target.value }))}
                 placeholder="010-0000-0000"
