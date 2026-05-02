@@ -124,11 +124,38 @@ async def get_invite_info(token: str, db: DbSession) -> dict[str, Any]:
 async def join_via_invite(
     token: str, db: DbSession, user: CurrentUser
 ) -> dict[str, Any]:
+    from sqlalchemy import select as _select
+
     from app.domains.member import service as member_service
-    from app.domains.member.models import TeamRole
+    from app.domains.member.models import TeamMember, TeamRole
     from app.domains.member.schemas import TeamMemberAdd
+    from app.domains.notification import service as notif_service
+    from app.domains.notification.models import NotificationKind
 
     team, _ = await service.get_info_by_invite_token(db, token)
     payload = TeamMemberAdd(user_id=user.id, role=TeamRole.MEMBER)
     public = await member_service.add_member_by_email(db, team.id, payload)
+
+    # 팀장에게 알림 발송
+    leaders = list(
+        (
+            await db.execute(
+                _select(TeamMember).where(
+                    TeamMember.team_id == team.id,
+                    TeamMember.role == TeamRole.LEADER,
+                )
+            )
+        ).scalars()
+    )
+    for leader in leaders:
+        await notif_service.create_notification(
+            db,
+            recipient_user_id=leader.user_id,
+            team_id=team.id,
+            kind=NotificationKind.MEMBER_JOINED,
+            title=f"{user.name}님이 팀에 참여했어요.",
+            body=team.name,
+            ref_id=public.id,
+        )
+
     return {"data": {"team_id": str(team.id), "member": public.model_dump(by_alias=True, mode="json")}}

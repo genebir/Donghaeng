@@ -14,6 +14,7 @@ class NotificationKind(StrEnum):
     REIMBURSEMENT_CONFIRMED = "reimbursement_confirmed"
     REIMBURSEMENT_COMPLETED = "reimbursement_completed"
     TESTIMONY_NEW = "testimony_new"
+    MEMBER_JOINED = "member_joined"
 
 
 class Notification(Base, UUIDMixin, TimestampMixin):

@@ -10,7 +10,8 @@ type NotificationKind =
   | "expense_rejected"
   | "reimbursement_confirmed"
   | "reimbursement_completed"
-  | "testimony_new";
+  | "testimony_new"
+  | "member_joined";
 
 interface Notification {
   id: string;
@@ -34,6 +35,8 @@ function notificationHref(n: Notification): string | null {
       return n.ref_id ? `${base}/reimbursements/${n.ref_id}` : null;
     case "testimony_new":
       return `${base}/testimonies`;
+    case "member_joined":
+      return `${base}/members`;
     default:
       return null;
   }
@@ -45,6 +48,7 @@ const KIND_ICON: Record<NotificationKind, string> = {
   reimbursement_confirmed: "₩",
   reimbursement_completed: "✓",
   testimony_new: "✦",
+  member_joined: "＋",
 };
 const KIND_COLOR: Record<NotificationKind, string> = {
   expense_approved: "text-sage",
@@ -52,6 +56,7 @@ const KIND_COLOR: Record<NotificationKind, string> = {
   reimbursement_confirmed: "text-ocean",
   reimbursement_completed: "text-sage",
   testimony_new: "text-coral",
+  member_joined: "text-ocean",
 };
 
 function formatRelative(iso: string): string {
