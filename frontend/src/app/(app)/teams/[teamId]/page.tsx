@@ -193,6 +193,18 @@ export default async function TeamHomePage({ params }: Props) {
   // D-day
   const dday = calcDDay(team.starts_on);
 
+  // 진행 중 / 다음 일정 판별
+  const nowMs = Date.now();
+  const scheduleWithStatus = schedule.map((item) => {
+    const start = new Date(item.starts_at).getTime();
+    const end = item.ends_at ? new Date(item.ends_at).getTime() : null;
+    const isNow = start <= nowMs && (end === null ? nowMs - start < 3600_000 : nowMs <= end);
+    return { ...item, isNow };
+  });
+  const firstUpcomingIdx = scheduleWithStatus.findIndex(
+    (item) => !item.isNow && new Date(item.starts_at).getTime() > nowMs
+  );
+
   return (
     <div className="mx-auto max-w-[860px]">
       {/* ── 팀 헤더 ──────────────────────────────────────────────────────── */}
@@ -298,17 +310,28 @@ export default async function TeamHomePage({ params }: Props) {
       <div className="grid gap-5 md:grid-cols-2">
         {/* 다음 일정 */}
         <SectionCard title="다음 일정" href={`/teams/${teamId}/schedule`}>
-          {schedule.length === 0 ? (
+          {scheduleWithStatus.length === 0 ? (
             <EmptyItem message="예정된 일정이 없습니다." />
           ) : (
             <ul className="flex flex-col gap-3">
-              {schedule.map((item) => (
-                <li key={item.id} className="flex flex-col gap-0.5">
-                  <span className="text-body-sm font-medium text-ink">{item.title}</span>
-                  <span className="text-caption text-ink-mute">
-                    {formatTime(item.starts_at)}
-                    {item.location && ` · ${item.location}`}
-                  </span>
+              {scheduleWithStatus.map((item, idx) => (
+                <li key={item.id} className="flex items-start gap-2">
+                  <div className="mt-0.5 w-10 flex-shrink-0 text-right">
+                    {item.isNow ? (
+                      <span className="rounded bg-coral px-1 py-0.5 text-[10px] font-bold text-paper">지금</span>
+                    ) : idx === firstUpcomingIdx ? (
+                      <span className="text-[10px] font-medium text-ink-mute">다음</span>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className={`text-body-sm font-medium ${item.isNow ? "text-coral" : "text-ink"}`}>
+                      {item.title}
+                    </span>
+                    <span className="text-caption text-ink-mute">
+                      {formatTime(item.starts_at)}
+                      {item.location && ` · ${item.location}`}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
