@@ -73,6 +73,12 @@ function EditItemForm({
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -225,6 +231,12 @@ function AddItemForm({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

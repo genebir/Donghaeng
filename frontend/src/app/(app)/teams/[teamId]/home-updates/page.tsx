@@ -65,6 +65,12 @@ function WriteForm({
           value={content} onChange={(e) => setContent(e.target.value)}
           placeholder="오늘 하루 어떠셨나요? 기도제목이나 소식을 나눠주세요."
           rows={6}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !disabled) {
+              e.preventDefault();
+              handleSave(e as unknown as React.FormEvent);
+            }
+          }}
           className="mt-2 block w-full resize-none border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
         />
       </label>

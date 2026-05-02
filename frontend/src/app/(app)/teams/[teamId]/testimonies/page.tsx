@@ -465,6 +465,12 @@ export default function TestimoniesPage() {
             onChange={(e) => setFormContent(e.target.value)}
             placeholder={formKind === "testimony" ? "하나님이 행하신 일을 나눠주세요." : "함께 기도할 제목을 적어주세요."}
             rows={5}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && formContent.trim() && !busy) {
+                e.preventDefault();
+                handleCreate(e as unknown as React.FormEvent);
+              }
+            }}
             className="block w-full resize-none border-b-2 border-ink/20 bg-transparent px-0 py-2 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
           />
 
