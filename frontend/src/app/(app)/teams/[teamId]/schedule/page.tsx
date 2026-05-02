@@ -450,7 +450,7 @@ export default function SchedulePage() {
   }
 
   const upcomingGroups = groupByDate(upcoming);
-  const pastGroups = groupByDate(past);
+  const pastGroups = groupByDate(past).reverse();
 
   return (
     <div className="mx-auto max-w-[720px]">
