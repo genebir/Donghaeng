@@ -268,6 +268,7 @@ export default function ChecklistPage() {
   const [items, setItems] = useState<ChecklistItemPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingCategory, setAddingCategory] = useState<ChecklistCategory | null>(null);
+  const [addResetKey, setAddResetKey] = useState(0);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
@@ -346,7 +347,7 @@ export default function ChecklistPage() {
       const json = await res.json();
       if (!res.ok) { showToast(json.message ?? "추가에 실패했어요.", false); return; }
       setItems((prev) => [...prev, json.data]);
-      setAddingCategory(null);
+      setAddResetKey((k) => k + 1);
     } catch { showToast("잠깐 문제가 있었어요.", false); }
   };
 
@@ -410,6 +411,7 @@ export default function ChecklistPage() {
                   {isAdding && (
                     <li>
                       <AddItemForm
+                        key={addResetKey}
                         category={category}
                         onAdd={(title, quantity) => handleAdd(category, title, quantity)}
                         onCancel={() => setAddingCategory(null)}
