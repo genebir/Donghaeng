@@ -149,6 +149,10 @@ function BudgetEditModal({
     onSave(result);
   }
 
+  const liveTotal = ALL_CATEGORIES
+    .filter((cat) => active.has(cat))
+    .reduce((sum, cat) => sum + (parseFloat(amounts[cat] || "0") || 0), 0);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4">
       <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={onClose} />
@@ -196,17 +200,25 @@ function BudgetEditModal({
           </div>
         </div>
 
-        <div className="flex gap-3 border-t border-ink/10 px-6 py-4">
-          <button onClick={onClose} className="h-10 flex-1 rounded-md border border-ink/20 text-body-sm text-ink-soft hover:bg-paper-deep">
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="h-10 flex-1 rounded-md bg-ink text-body-sm font-medium text-paper hover:opacity-80 disabled:opacity-50"
-          >
-            {saving ? "저장 중…" : "저장"}
-          </button>
+        <div className="border-t border-ink/10 px-6 py-4">
+          {liveTotal > 0 && (
+            <p className="mb-3 flex items-center justify-between text-body-sm">
+              <span className="text-ink-mute">합계</span>
+              <span className="font-semibold text-ink">{formatKRW(liveTotal)}</span>
+            </p>
+          )}
+          <div className="flex gap-3">
+            <button onClick={onClose} className="h-10 flex-1 rounded-md border border-ink/20 text-body-sm text-ink-soft hover:bg-paper-deep">
+              취소
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-10 flex-1 rounded-md bg-ink text-body-sm font-medium text-paper hover:opacity-80 disabled:opacity-50"
+            >
+              {saving ? "저장 중…" : "저장"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

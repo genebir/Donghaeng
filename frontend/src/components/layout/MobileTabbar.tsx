@@ -75,6 +75,94 @@ function IconClose() {
   );
 }
 
+// ── 드로어 전용 아이콘 (20×20) ──────────────────────────────────────────────
+
+function DIconUsers() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="7.5" cy="6" r="3" />
+      <path d="M1 17c0-3.5 2.9-6.5 6.5-6.5" />
+      <circle cx="15" cy="7" r="2.5" />
+      <path d="M12 17c0-3 1.3-5.5 3-5.5s3 2.5 3 5.5" />
+    </svg>
+  );
+}
+
+function DIconTestimony() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H6l-4 4V3z" />
+    </svg>
+  );
+}
+
+function DIconMegaphone() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3.5 7.5h2.5l8.5-5v13l-8.5-5H3.5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1z" />
+      <path d="M6 7.5v5" />
+    </svg>
+  );
+}
+
+function DIconClipboardCheck() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M13 2.5H15.5A1.5 1.5 0 0 1 17 4v13.5A1.5 1.5 0 0 1 15.5 19h-11A1.5 1.5 0 0 1 3 17.5V4A1.5 1.5 0 0 1 4.5 2.5H7" />
+      <rect x="7" y="1.5" width="6" height="3" rx="1" />
+      <path d="M7 11l2 2 4-4" />
+    </svg>
+  );
+}
+
+function DIconWallet() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="2" y="5.5" width="16" height="11" rx="1.5" />
+      <path d="M13.5 11a1 1 0 1 0 2 0 1 1 0 0 0-2 0z" fill="currentColor" stroke="none" />
+      <path d="M5.5 5.5V4a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v1.5" />
+    </svg>
+  );
+}
+
+function DIconSend() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M18 2L9.5 10.5M18 2l-6 16-2.5-7.5L2 8l16-6z" />
+    </svg>
+  );
+}
+
+function DIconBarChart() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="2.5" y="11" width="3.5" height="7" rx="0.5" />
+      <rect x="8.25" y="6" width="3.5" height="12" rx="0.5" />
+      <rect x="14" y="2" width="3.5" height="16" rx="0.5" />
+    </svg>
+  );
+}
+
+function DIconShare() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="15.5" cy="4" r="1.75" />
+      <circle cx="15.5" cy="16" r="1.75" />
+      <circle cx="4.5" cy="10" r="1.75" />
+      <path d="M6.2 9.1l7.6-4M6.2 10.9l7.6 4" />
+    </svg>
+  );
+}
+
+function DIconSettings() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="10" cy="10" r="2.5" />
+      <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.1 4.1l1.4 1.4M14.5 14.5l1.4 1.4M15.9 4.1l-1.4 1.4M5.5 14.5l-1.4 1.4" />
+    </svg>
+  );
+}
+
 // ── 더보기 드로어 내부 아이템 ───────────────────────────────────────────────
 
 interface DrawerItem {
@@ -94,25 +182,25 @@ function buildDrawerGroups(teamId: string): DrawerGroup[] {
     {
       label: "활동",
       items: [
-        { href: `${base}/members`,      label: "멤버",     icon: "👥" },
-        { href: `${base}/testimonies`,  label: "간증",     icon: "✦" },
-        { href: `${base}/home-updates`, label: "본진 소식", icon: "📢" },
+        { href: `${base}/members`,      label: "멤버",     icon: <DIconUsers /> },
+        { href: `${base}/testimonies`,  label: "간증",     icon: <DIconTestimony /> },
+        { href: `${base}/home-updates`, label: "본진 소식", icon: <DIconMegaphone /> },
       ],
     },
     {
       label: "회계",
       items: [
-        { href: `${base}/expenses/review`, label: "지출 검토", icon: "✓" },
-        { href: `${base}/budget`,          label: "예산",      icon: "₩" },
-        { href: `${base}/reimbursements`,  label: "정산",      icon: "→" },
-        { href: `${base}/reports`,         label: "리포트",    icon: "▦" },
+        { href: `${base}/expenses/review`, label: "지출 검토", icon: <DIconClipboardCheck /> },
+        { href: `${base}/budget`,          label: "예산",      icon: <DIconWallet /> },
+        { href: `${base}/reimbursements`,  label: "정산",      icon: <DIconSend /> },
+        { href: `${base}/reports`,         label: "리포트",    icon: <DIconBarChart /> },
       ],
     },
     {
       label: "관리",
       items: [
-        { href: `${base}/share-settings`, label: "공유 설정", icon: "⊹" },
-        { href: `${base}/settings`,        label: "팀 설정",   icon: "⚙" },
+        { href: `${base}/share-settings`, label: "공유 설정", icon: <DIconShare /> },
+        { href: `${base}/settings`,        label: "팀 설정",   icon: <DIconSettings /> },
       ],
     },
   ];
@@ -187,7 +275,7 @@ export function MobileTabbar() {
                             : "bg-paper-deep text-ink-soft hover:bg-ink/10",
                         )}
                       >
-                        <span className="text-lg leading-none">{item.icon}</span>
+                        <span className="flex items-center justify-center">{item.icon}</span>
                         <span className="text-caption font-medium leading-tight">{item.label}</span>
                       </Link>
                     ))}
