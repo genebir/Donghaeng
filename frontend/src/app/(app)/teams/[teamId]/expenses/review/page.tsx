@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { ExpensePublic, ExpenseStatus, ExpenseCategory } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   TRANSPORT: "교통", LODGING: "숙박", MEAL: "식사", MINISTRY: "사역",
@@ -83,6 +84,7 @@ const TABS: { key: FilterTab; label: string }[] = [
 
 export default function ExpenseReviewPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin, loaded: roleLoaded } = useTeamRole();
 
   const [expenses, setExpenses] = useState<ExpensePublic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,6 +177,15 @@ export default function ExpenseReviewPage() {
     } catch { showToast("잠깐 문제가 있었어요.", false); }
     finally { setBusy(false); }
   };
+
+  if (roleLoaded && !isAdmin) {
+    return (
+      <div className="mx-auto max-w-[800px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 팀 관리자만 볼 수 있어요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[800px]">

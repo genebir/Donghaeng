@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 function IconCopy() {
   return (
@@ -31,6 +32,7 @@ interface TeamPublic {
 
 export default function ShareSettingsPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin, loaded: roleLoaded } = useTeamRole();
   const [team, setTeam] = useState<TeamPublic | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -53,6 +55,15 @@ export default function ShareSettingsPage() {
       setTimeout(() => setCopied(false), 2000);
     } catch { /* ignore */ }
   }, [shareUrl]);
+
+  if (roleLoaded && !isAdmin) {
+    return (
+      <div className="mx-auto max-w-[640px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 팀 관리자만 볼 수 있어요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[640px]">

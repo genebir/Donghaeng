@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 function IconDownload() {
   return (
@@ -32,6 +33,7 @@ interface ReportItem {
 
 export default function ReportsPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin, loaded: roleLoaded } = useTeamRole();
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
@@ -83,6 +85,15 @@ export default function ReportsPage() {
       setBusy(null);
     }
   };
+
+  if (roleLoaded && !isAdmin) {
+    return (
+      <div className="mx-auto max-w-[640px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 팀 관리자만 볼 수 있어요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[640px]">

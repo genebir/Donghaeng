@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { ReimbursementPublic, ReimbursementStatus, ExpenseCategory } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   TRANSPORT: "교통", LODGING: "숙박", MEAL: "식사", MINISTRY: "사역",
@@ -121,6 +122,7 @@ function CompleteModal({ onClose, onConfirm, busy, recipientBankName }: {
 
 export default function ReimbursementDetailPage() {
   const { teamId, reimbursementId } = useParams<{ teamId: string; reimbursementId: string }>();
+  const { isAdmin, loaded: roleLoaded } = useTeamRole();
 
   const [data, setData] = useState<ReimbursementPublic | null>(null);
   const [fullAccountNumber, setFullAccountNumber] = useState<string | null>(null);
@@ -206,6 +208,15 @@ export default function ReimbursementDetailPage() {
     const cat = e.category;
     byCategory[cat] = (byCategory[cat] ?? 0) + parseFloat(e.amount);
   });
+
+  if (roleLoaded && !isAdmin) {
+    return (
+      <div className="mx-auto max-w-[600px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 팀 관리자만 볼 수 있어요.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

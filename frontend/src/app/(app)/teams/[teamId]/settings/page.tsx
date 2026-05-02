@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 const APP_URL =
   typeof window !== "undefined"
@@ -51,6 +52,7 @@ function Field({ label, children, optional }: { label: string; children: React.R
 
 export default function TeamSettingsPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin, loaded: roleLoaded } = useTeamRole();
 
   const [team, setTeam] = useState<TeamDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -209,6 +211,15 @@ export default function TeamSettingsPage() {
     } finally {
       setDestSaving(false);
     }
+  }
+
+  if (roleLoaded && !isAdmin) {
+    return (
+      <div className="mx-auto max-w-[600px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 팀 관리자만 볼 수 있어요.</p>
+      </div>
+    );
   }
 
   if (loading) {

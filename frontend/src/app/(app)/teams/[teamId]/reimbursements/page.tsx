@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ReimbursementPublic, ReimbursementPreviewItem, ReimbursementStatus, ExpenseCategory } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 const CATEGORY_LABEL: Record<ExpenseCategory, string> = {
   TRANSPORT: "교통", LODGING: "숙박", MEAL: "식사", MINISTRY: "사역",
@@ -32,6 +33,7 @@ function formatDate(iso: string) {
 export default function ReimbursementsPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const router = useRouter();
+  const { isAdmin, loaded: roleLoaded } = useTeamRole();
 
   const [preview, setPreview] = useState<ReimbursementPreviewItem[]>([]);
   const [reimbursements, setReimbursements] = useState<ReimbursementPublic[]>([]);
@@ -80,6 +82,15 @@ export default function ReimbursementsPage() {
     reimbursements.filter((r) => r.status !== "completed").map((r) => r.recipient_user_id)
   );
   const pendingPreview = preview.filter((p) => !inProgressUserIds.has(p.recipient_user_id));
+
+  if (roleLoaded && !isAdmin) {
+    return (
+      <div className="mx-auto max-w-[720px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 팀 관리자만 볼 수 있어요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[720px]">
