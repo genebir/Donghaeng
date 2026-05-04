@@ -53,14 +53,14 @@ export function TeamOnboarding() {
             key: "bank",
             label: "계좌 정보",
             done: !!hasBank,
-            href: "/settings/profile",
+            href: "/settings/profile?focus=bank",
             action: "입력하기",
           },
           {
             key: "phone",
             label: "연락처",
             done: !!hasPhone,
-            href: "/settings/profile",
+            href: "/settings/profile?focus=phone",
             action: "입력하기",
           },
         ];

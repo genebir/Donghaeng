@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface OutreachMembership {
   outreach_id: string;
@@ -74,6 +75,10 @@ function UnderlineInput({
 }
 
 export default function ProfileSettingsPage() {
+  const searchParams = useSearchParams();
+  const focusParam = searchParams.get("focus") as "phone" | "bank" | null;
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const bankRef = useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,6 +116,12 @@ export default function ProfileSettingsPage() {
       })
       .finally(() => setLoading(false));
   }, [showToast]);
+
+  useEffect(() => {
+    if (loading || !focusParam) return;
+    const ref = focusParam === "phone" ? phoneRef : bankRef;
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+  }, [loading, focusParam]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -207,7 +218,10 @@ export default function ProfileSettingsPage() {
                 <p className="mt-2 py-2 text-body text-ink-soft">{profile?.email}</p>
               </div>
 
-              <div>
+              <div
+                ref={phoneRef}
+                className={`rounded-md transition-colors duration-500 ${focusParam === "phone" ? "ring-2 ring-coral/40 px-3 py-2 -mx-3 -my-2" : ""}`}
+              >
                 <label htmlFor="phone">
                   <FieldLabel>연락처</FieldLabel>
                   <UnderlineInput
@@ -288,7 +302,10 @@ export default function ProfileSettingsPage() {
           )}
 
           {/* 계좌 정보 */}
-          <section>
+          <section
+            ref={bankRef}
+            className={`rounded-md transition-colors duration-500 ${focusParam === "bank" ? "ring-2 ring-coral/40 px-3 py-2 -mx-3 -my-2" : ""}`}
+          >
             <h2 className="mb-1 text-h3 text-ink">계좌 정보</h2>
             <p className="mb-5 text-body-sm text-ink-mute">
               정산 시 사용됩니다. 계좌번호는 암호화 저장돼요.
