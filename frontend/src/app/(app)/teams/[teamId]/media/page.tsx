@@ -358,7 +358,7 @@ export default function MediaPage() {
     setLoading(true);
     try {
       const [mediaRes, meRes] = await Promise.all([
-        fetch(`/api/media/${teamId}?kind=photo`),
+        fetch(`/api/media/${teamId}`),
         fetch("/api/users/me"),
       ]);
       if (mediaRes.ok) setAssets((await mediaRes.json()).data ?? []);
@@ -476,7 +476,7 @@ export default function MediaPage() {
 
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="text-overline uppercase tracking-overline text-ink-mute">팀 사진</p>
+          <p className="text-overline uppercase tracking-overline text-ink-mute">팀 미디어</p>
           <h1 className="font-display mt-1 text-h1">
             미디어<span className="text-coral">.</span>
             {assets.length > 0 && (
@@ -489,7 +489,7 @@ export default function MediaPage() {
           className="inline-flex h-9 flex-shrink-0 items-center gap-2 rounded-md bg-ink px-4 text-body-sm font-medium text-paper hover:bg-ink/90 active:translate-y-px transition"
         >
           <IconUpload />
-          사진 올리기
+          올리기
         </button>
         <input
           ref={fileInputRef}
@@ -509,9 +509,9 @@ export default function MediaPage() {
         >
           <div className="text-ink-mute"><IconImage /></div>
           <div>
-            <p className="text-body text-ink-mute">아직 사진이 없어요.</p>
+            <p className="text-body text-ink-mute">아직 미디어가 없어요.</p>
             <p className="mt-1 text-body-sm text-ink-mute">
-              사진을 드래그하거나{" "}
+              사진·영상을 드래그하거나{" "}
               <button onClick={() => fileInputRef.current?.click()} className="underline underline-offset-2 text-ink">
                 파일을 선택
               </button>
@@ -561,7 +561,7 @@ export default function MediaPage() {
                   <h2 className="text-body-sm font-medium text-ink-mute">
                     {dateSectionLabel(group[0].created_at)}
                   </h2>
-                  <span className="text-caption text-ink-mute">{group.length}장</span>
+                  <span className="text-caption text-ink-mute">{group.length}개</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
                   {group.map((a) => (
