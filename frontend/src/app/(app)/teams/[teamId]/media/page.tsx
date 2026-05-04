@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { MediaAssetPublic } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 // ── 아이콘 ─────────────────────────────────────────────────────────────────
 
@@ -92,10 +93,12 @@ function dateKey(iso: string): string {
 
 function PhotoCard({
   asset,
+  canDelete,
   onSelect,
   onDelete,
 }: {
   asset: MediaAssetPublic;
+  canDelete: boolean;
   onSelect: (a: MediaAssetPublic) => void;
   onDelete: (id: string) => void;
 }) {
@@ -146,36 +149,38 @@ function PhotoCard({
         <div className="absolute right-2 top-2 h-2 w-2 rounded-full bg-coral shadow" />
       )}
 
-      {/* 삭제 버튼 — 2단계 확인 */}
-      {confirmDel ? (
-        <div
-          className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-md bg-rust/90 px-1.5 py-1 shadow"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className="text-[10px] font-medium text-paper">삭제?</span>
-          <button
-            onClick={() => onDelete(asset.id)}
-            className="text-[10px] font-bold text-paper underline underline-offset-1 hover:text-rust-light"
+      {/* 삭제 버튼 — 업로드한 본인 또는 관리자만 표시 */}
+      {canDelete && (
+        confirmDel ? (
+          <div
+            className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-md bg-rust/90 px-1.5 py-1 shadow"
+            onClick={(e) => e.stopPropagation()}
           >
-            예
-          </button>
+            <span className="text-[10px] font-medium text-paper">삭제?</span>
+            <button
+              onClick={() => onDelete(asset.id)}
+              className="text-[10px] font-bold text-paper underline underline-offset-1 hover:text-rust-light"
+            >
+              예
+            </button>
+            <button
+              onClick={() => setConfirmDel(false)}
+              className="text-[10px] text-paper/70 hover:text-paper"
+            >
+              취소
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={() => setConfirmDel(false)}
-            className="text-[10px] text-paper/70 hover:text-paper"
+            onClick={(e) => { e.stopPropagation(); setConfirmDel(true); }}
+            aria-label="삭제"
+            className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-paper opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rust/90"
           >
-            취소
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+              <path d="M2 2l10 10M12 2L2 12" />
+            </svg>
           </button>
-        </div>
-      ) : (
-        <button
-          onClick={(e) => { e.stopPropagation(); setConfirmDel(true); }}
-          aria-label="삭제"
-          className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-paper opacity-0 transition-opacity group-hover:opacity-100 hover:bg-rust/90"
-        >
-          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-            <path d="M2 2l10 10M12 2L2 12" />
-          </svg>
-        </button>
+        )
       )}
     </div>
   );
@@ -213,12 +218,14 @@ function UploadCard({ item }: { item: UploadItem }) {
 function Lightbox({
   asset,
   assets,
+  canDelete,
   onClose,
   onDelete,
   onNavigate,
 }: {
   asset: MediaAssetPublic;
   assets: MediaAssetPublic[];
+  canDelete: boolean;
   onClose: () => void;
   onDelete: (id: string) => void;
   onNavigate: (asset: MediaAssetPublic) => void;
@@ -281,7 +288,7 @@ function Lightbox({
               <IconDownload />
             </a>
           )}
-          {confirmDel ? (
+          {canDelete && (confirmDel ? (
             <div className="flex items-center gap-2">
               <span className="text-caption text-rust">삭제할까요?</span>
               <button onClick={() => { onDelete(asset.id); onClose(); }}
@@ -294,7 +301,7 @@ function Lightbox({
               className="text-caption text-paper/40 hover:text-rust transition-colors">
               삭제
             </button>
-          )}
+          ))}
         </div>
         <button
           onClick={onClose}
@@ -333,7 +340,9 @@ function Lightbox({
 
 export default function MediaPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin } = useTeamRole();
   const [assets, setAssets] = useState<MediaAssetPublic[]>([]);
+  const [meId, setMeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [selected, setSelected] = useState<MediaAssetPublic | null>(null);
@@ -348,8 +357,12 @@ export default function MediaPage() {
   const loadAssets = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/media/${teamId}?kind=photo`);
-      if (res.ok) setAssets((await res.json()).data ?? []);
+      const [mediaRes, meRes] = await Promise.all([
+        fetch(`/api/media/${teamId}?kind=photo`),
+        fetch("/api/users/me"),
+      ]);
+      if (mediaRes.ok) setAssets((await mediaRes.json()).data ?? []);
+      if (meRes.ok) setMeId(((await meRes.json()).data)?.id ?? null);
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, [teamId]);
@@ -454,6 +467,7 @@ export default function MediaPage() {
         <Lightbox
           asset={selected}
           assets={assets}
+          canDelete={isAdmin || selected.uploader_user_id === meId}
           onClose={() => setSelected(null)}
           onDelete={(id) => { handleDelete(id); setSelected(null); }}
           onNavigate={setSelected}
@@ -551,7 +565,7 @@ export default function MediaPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
                   {group.map((a) => (
-                    <PhotoCard key={a.id} asset={a} onSelect={setSelected} onDelete={handleDelete} />
+                    <PhotoCard key={a.id} asset={a} canDelete={isAdmin || a.uploader_user_id === meId} onSelect={setSelected} onDelete={handleDelete} />
                   ))}
                 </div>
               </section>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTeamRole } from "@/hooks/useTeamRole";
 import type { ChecklistCategory, ChecklistItemPublic, ChecklistStatus } from "@/types/api";
 
 // ── 상수 ──────────────────────────────────────────────────────────────────────
@@ -124,11 +125,13 @@ function EditItemForm({
 
 function ChecklistRow({
   item,
+  isAdmin,
   onToggle,
   onDelete,
   onEdit,
 }: {
   item: ChecklistItemPublic;
+  isAdmin: boolean;
   onToggle: (id: string, next: ChecklistStatus) => void;
   onDelete: (id: string) => void;
   onEdit: (id: string, patch: Partial<ChecklistItemPublic>) => Promise<void>;
@@ -183,33 +186,35 @@ function ChecklistRow({
         {item.notes && <p className="mt-1 text-body-sm text-ink-mute">{item.notes}</p>}
       </div>
 
-      {/* 수정 / 삭제 버튼 — 모바일 상시 표시, 데스크톱 호버 시 표시 */}
-      <div className="flex flex-shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus-within:!opacity-100">
-        {confirmDel ? (
-          <div className="flex items-center gap-1.5 rounded-md border border-rust/30 bg-rust/5 px-2 py-1">
-            <span className="text-caption text-rust">삭제?</span>
-            <button onClick={() => onDelete(item.id)}
-              className="text-caption font-semibold text-rust hover:underline">예</button>
-            <button onClick={() => setConfirmDel(false)}
-              className="text-caption text-ink-mute hover:text-ink">취소</button>
-          </div>
-        ) : (
-          <>
-            <button onClick={() => setEditing(true)} aria-label="수정"
-              className="rounded p-1 text-ink-mute hover:text-ink">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M10.5 1.5l2 2-8 8H2.5v-2l8-8z" />
-              </svg>
-            </button>
-            <button onClick={() => setConfirmDel(true)} aria-label="삭제"
-              className="rounded p-1 text-ink-mute hover:text-rust">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
-                <path d="M2 3.5h10M5.5 3.5V2.5h3v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 8h6.6l.7-8" />
-              </svg>
-            </button>
-          </>
-        )}
-      </div>
+      {/* 수정 / 삭제 버튼 — 관리자만 표시 */}
+      {isAdmin && (
+        <div className="flex flex-shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus-within:!opacity-100">
+          {confirmDel ? (
+            <div className="flex items-center gap-1.5 rounded-md border border-rust/30 bg-rust/5 px-2 py-1">
+              <span className="text-caption text-rust">삭제?</span>
+              <button onClick={() => onDelete(item.id)}
+                className="text-caption font-semibold text-rust hover:underline">예</button>
+              <button onClick={() => setConfirmDel(false)}
+                className="text-caption text-ink-mute hover:text-ink">취소</button>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => setEditing(true)} aria-label="수정"
+                className="rounded p-1 text-ink-mute hover:text-ink">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M10.5 1.5l2 2-8 8H2.5v-2l8-8z" />
+                </svg>
+              </button>
+              <button onClick={() => setConfirmDel(true)} aria-label="삭제"
+                className="rounded p-1 text-ink-mute hover:text-rust">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+                  <path d="M2 3.5h10M5.5 3.5V2.5h3v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 8h6.6l.7-8" />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </li>
   );
 }
@@ -277,6 +282,7 @@ function AddItemForm({
 
 export default function ChecklistPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin } = useTeamRole();
   const [items, setItems] = useState<ChecklistItemPublic[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingCategory, setAddingCategory] = useState<ChecklistCategory | null>(null);
@@ -418,7 +424,7 @@ export default function ChecklistPage() {
             const visibleItems = hideDone ? catItems.filter((i) => i.status !== "done") : catItems;
             const isAdding = addingCategory === category;
             if (catItems.length === 0 && !isAdding) {
-              // Show collapsed "+" only
+              if (!isAdmin) return null;
               return (
                 <div key={category} className="flex items-center gap-3">
                   <span className="text-body-sm font-medium uppercase tracking-wide text-ink-mute">{label}</span>
@@ -434,14 +440,16 @@ export default function ChecklistPage() {
                 <div className="mb-3 flex items-center gap-3">
                   <h2 className="text-body-sm font-medium uppercase tracking-wide text-ink-mute">{label}</h2>
                   <span className="text-caption text-ink-mute">{catDone}/{catItems.length}</span>
-                  <button onClick={() => setAddingCategory(isAdding ? null : category)}
-                    className="ml-auto text-caption text-ink-mute hover:text-coral transition-colors">
-                    {isAdding ? "취소" : "+ 추가"}
-                  </button>
+                  {isAdmin && (
+                    <button onClick={() => setAddingCategory(isAdding ? null : category)}
+                      className="ml-auto text-caption text-ink-mute hover:text-coral transition-colors">
+                      {isAdding ? "취소" : "+ 추가"}
+                    </button>
+                  )}
                 </div>
                 <ul className="flex flex-col gap-2">
                   {visibleItems.map((item) => (
-                    <ChecklistRow key={item.id} item={item}
+                    <ChecklistRow key={item.id} item={item} isAdmin={isAdmin}
                       onToggle={handleToggle} onDelete={handleDelete} onEdit={handleEdit} />
                   ))}
                   {hideDone && catDone > 0 && visibleItems.length === 0 && !isAdding && (

@@ -491,6 +491,37 @@ ChecklistItemAdminContext = Annotated[
 ]
 
 
+@dataclass
+class ChecklistItemAccess:
+    item: ChecklistItem
+    is_admin: bool
+
+
+async def require_checklist_item_member(
+    db: DbSession,
+    user: CurrentUser,
+    item_id: Annotated[UUID, Path()],
+) -> ChecklistItemAccess:
+    item = (
+        await db.execute(
+            select(ChecklistItem).where(ChecklistItem.id == item_id)
+        )
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="준비물을 찾을 수 없습니다.",
+        )
+    team, org_membership = await _resolve_team_membership(db, user, item.team_id)
+    is_admin = await _check_team_admin(db, user.id, team, org_membership)
+    return ChecklistItemAccess(item=item, is_admin=is_admin)
+
+
+ChecklistItemMemberContext = Annotated[
+    ChecklistItemAccess, Depends(require_checklist_item_member)
+]
+
+
 # ===========================================================================
 # Expense scope
 # ===========================================================================

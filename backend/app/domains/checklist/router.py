@@ -1,9 +1,10 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.permissions import (
     ChecklistItemAdminContext,
+    ChecklistItemMemberContext,
     TeamAdminContext,
     TeamContext,
 )
@@ -51,10 +52,18 @@ async def create_item(
 @flat_router.patch("/{item_id}")
 async def update_item(
     payload: ChecklistItemUpdate,
-    item: ChecklistItemAdminContext,
+    access: ChecklistItemMemberContext,
     db: DbSession,
 ) -> dict[str, Any]:
-    updated = await service.update_item(db, item, payload)
+    # Non-admins may only update status.
+    if not access.is_admin:
+        non_status_fields = {k for k, v in payload.model_dump(exclude_unset=True).items() if k != "status" and v is not None}
+        if non_status_fields:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="상태(status) 외 필드는 팀 관리자만 변경할 수 있습니다.",
+            )
+    updated = await service.update_item(db, access.item, payload)
     return {"data": _to_dict(updated)}
 
 
