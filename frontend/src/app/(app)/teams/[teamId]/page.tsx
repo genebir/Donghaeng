@@ -5,6 +5,7 @@ import { fetchApi, ApiError } from "@/lib/api";
 import type { TeamStatus } from "@/types/api";
 import { TeamOnboarding } from "./TeamOnboarding";
 import { RejectedExpenseAlert } from "./RejectedExpenseAlert";
+import { PendingReviewBanner } from "./PendingReviewBanner";
 import { ShareLinkButton } from "./ShareLinkButton";
 
 // ── API 응답 타입 ──────────────────────────────────────────────────────────
@@ -119,16 +120,18 @@ function SectionCard({
   children,
 }: {
   title: string;
-  href: string;
+  href?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-md border border-ink/10 bg-paper">
       <div className="flex items-center justify-between border-b border-ink/10 px-5 py-3">
         <h2 className="text-h3 font-medium">{title}</h2>
-        <Link href={href} className="text-body-sm text-ocean hover:underline">
-          전체 보기 →
-        </Link>
+        {href && (
+          <Link href={href} className="text-body-sm text-ocean hover:underline">
+            전체 보기 →
+          </Link>
+        )}
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -188,9 +191,6 @@ export default async function TeamHomePage({ params }: Props) {
     (e) => e.currency === "KRW" && e.status !== "rejected" && new Date(e.spent_at) >= sevenDaysAgo
   );
   const weeklyTotal = recentExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-
-  // 검토 대기 지출
-  const pendingExpenseCount = expenses.filter((e) => e.status === "pending").length;
 
   // D-day
   const dday = calcDDay(team.starts_on);
@@ -270,26 +270,13 @@ export default async function TeamHomePage({ params }: Props) {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M2 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5H5L2 12V2.5z" />
           </svg>
-          소식 쓰기
+          본진 소식
         </Link>
         <ShareLinkButton slug={team.slug} />
       </div>
 
-      {/* ── 검토 대기 배너 ──────────────────────────────────────────────── */}
-      {pendingExpenseCount > 0 && (
-        <Link
-          href={`/teams/${teamId}/expenses/review`}
-          className="mb-6 flex items-center gap-3 rounded-md border border-mustard/30 bg-mustard/8 px-4 py-3 hover:bg-mustard/12 transition-colors"
-        >
-          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-mustard text-[11px] font-bold text-paper">
-            {pendingExpenseCount > 9 ? "9+" : pendingExpenseCount}
-          </span>
-          <p className="flex-1 text-body-sm font-medium text-ink">
-            지출 검토 대기 {pendingExpenseCount}건 — 승인이 필요해요
-          </p>
-          <span className="text-caption text-ink-mute">검토하기 →</span>
-        </Link>
-      )}
+      {/* ── 검토 대기 배너 (관리자 전용, 클라이언트) ────────────────────── */}
+      <PendingReviewBanner />
 
       {/* ── 요약 KPI ─────────────────────────────────────────────────────── */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -408,7 +395,7 @@ export default async function TeamHomePage({ params }: Props) {
         </SectionCard>
 
         {/* 방문지 정보 */}
-        <SectionCard title="방문지 정보" href={`/teams/${teamId}/settings`}>
+        <SectionCard title="방문지 정보">
           {!team.destination ? (
             <EmptyItem message="방문지 정보가 없습니다." />
           ) : (
