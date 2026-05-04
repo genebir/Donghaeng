@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type NotificationKind =
   | "expense_approved"
   | "expense_rejected"
+  | "expense_resubmitted"
   | "reimbursement_confirmed"
   | "reimbursement_completed"
   | "testimony_new"
@@ -30,6 +31,8 @@ function notificationHref(n: Notification): string | null {
     case "expense_approved":
     case "expense_rejected":
       return n.ref_id ? `${base}/expenses/${n.ref_id}` : null;
+    case "expense_resubmitted":
+      return n.ref_id ? `${base}/expenses/review` : null;
     case "reimbursement_confirmed":
     case "reimbursement_completed":
       return n.ref_id ? `${base}/reimbursements/${n.ref_id}` : null;
@@ -45,6 +48,7 @@ function notificationHref(n: Notification): string | null {
 const KIND_ICON: Record<NotificationKind, string> = {
   expense_approved: "✓",
   expense_rejected: "✕",
+  expense_resubmitted: "↺",
   reimbursement_confirmed: "₩",
   reimbursement_completed: "✓",
   testimony_new: "✦",
@@ -53,6 +57,7 @@ const KIND_ICON: Record<NotificationKind, string> = {
 const KIND_COLOR: Record<NotificationKind, string> = {
   expense_approved: "text-sage",
   expense_rejected: "text-rust",
+  expense_resubmitted: "text-mustard",
   reimbursement_confirmed: "text-ocean",
   reimbursement_completed: "text-sage",
   testimony_new: "text-coral",

@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import Response
+from sqlalchemy import select
 
 from app.core.permissions import (
     ExpenseAccessContext,
@@ -25,6 +26,7 @@ from app.domains.expense.schemas import (
     ExpenseRejectIn,
     ExpenseUpdate,
 )
+from app.domains.member.models import TeamMember, TeamRole
 from app.domains.notification import service as notif_service
 from app.domains.notification.models import NotificationKind
 
@@ -112,7 +114,6 @@ async def list_expenses(
     spent_from: Annotated[datetime | None, Query(alias="from")] = None,
     spent_to: Annotated[datetime | None, Query(alias="to")] = None,
 ) -> dict[str, Any]:
-    from sqlalchemy import select
     from app.domains.user.models import User
 
     expenses = await service.list_expenses(
@@ -154,6 +155,7 @@ async def update_expense(
     access: ExpenseAccessContext,
     db: DbSession,
 ) -> dict[str, Any]:
+    was_rejected = access.expense.status == ExpenseStatus.REJECTED
     updated = await service.update_expense(
         db,
         access.expense,
@@ -161,6 +163,26 @@ async def update_expense(
         is_admin=access.is_admin,
         is_self=access.is_self,
     )
+    # 반려 → 재제출 전환 시 팀 리더에게 알림
+    if was_rejected and updated.status == ExpenseStatus.PENDING:
+        leader_ids = list(
+            (await db.execute(
+                select(TeamMember.user_id).where(
+                    TeamMember.team_id == updated.team_id,
+                    TeamMember.role == TeamRole.LEADER,
+                )
+            )).scalars()
+        )
+        for leader_id in leader_ids:
+            await notif_service.create_notification(
+                db,
+                recipient_user_id=leader_id,
+                team_id=updated.team_id,
+                kind=NotificationKind.EXPENSE_RESUBMITTED,
+                title="지출이 재제출됐어요",
+                body=updated.description,
+                ref_id=updated.id,
+            )
     return {"data": _to_dict(updated)}
 
 

@@ -11,6 +11,7 @@ from app.db.base import Base, TimestampMixin, UUIDMixin
 class NotificationKind(StrEnum):
     EXPENSE_APPROVED = "expense_approved"
     EXPENSE_REJECTED = "expense_rejected"
+    EXPENSE_RESUBMITTED = "expense_resubmitted"
     REIMBURSEMENT_CONFIRMED = "reimbursement_confirmed"
     REIMBURSEMENT_COMPLETED = "reimbursement_completed"
     TESTIMONY_NEW = "testimony_new"
