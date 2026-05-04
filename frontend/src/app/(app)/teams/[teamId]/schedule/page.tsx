@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 
@@ -336,9 +337,9 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 export default function SchedulePage() {
   const { teamId } = useParams<{ teamId: string }>();
 
+  const { isAdmin } = useTeamRole();
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // 추가 모달
   const [addModal, setAddModal] = useState<{ open: boolean; defaultDate?: string }>({ open: false });
@@ -360,21 +361,8 @@ export default function SchedulePage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [schedRes, meRes] = await Promise.all([
-          fetch(`/api/schedule/${teamId}`),
-          fetch("/api/users/me"),
-        ]);
+        const schedRes = await fetch(`/api/schedule/${teamId}`);
         if (schedRes.ok) setItems((await schedRes.json()).data ?? []);
-
-        if (meRes.ok) {
-          const me = (await meRes.json()).data;
-          const orgRole = me?.org_role;
-          const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
-          const isDirector = (me?.outreach_memberships ?? []).some((om: { role: string }) => om.role === "DIRECTOR");
-          const isStaff = (me?.outreach_memberships ?? []).some((om: { role: string; team_id: string | null }) => om.role === "STAFF" && om.team_id === teamId);
-          const isLeader = (me?.team_memberships ?? []).some((tm: { team_id: string; role: string }) => tm.team_id === teamId && tm.role === "LEADER");
-          setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
-        }
       } catch {
         showToast("데이터를 불러오지 못했어요.", false);
       } finally {

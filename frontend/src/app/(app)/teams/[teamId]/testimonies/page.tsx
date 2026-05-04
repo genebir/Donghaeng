@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 
@@ -297,9 +298,9 @@ export default function TestimoniesPage() {
   const [formVisibility, setFormVisibility] = useState<TestimonyVisibility>("team");
   const [formName, setFormName] = useState("");
 
+  const { isAdmin } = useTeamRole();
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [meId, setMeId] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
@@ -319,12 +320,6 @@ export default function TestimoniesPage() {
       if (meRes?.ok) {
         const me = (await meRes.json()).data;
         setMeId(me?.id ?? null);
-        const orgRole = me?.org_role;
-        const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
-        const isDirector = (me?.outreach_memberships ?? []).some((om: { role: string }) => om.role === "DIRECTOR");
-        const isStaff = (me?.outreach_memberships ?? []).some((om: { role: string; team_id: string | null }) => om.role === "STAFF" && om.team_id === teamId);
-        const isLeader = (me?.team_memberships ?? []).some((tm: { team_id: string; role: string }) => tm.team_id === teamId && tm.role === "LEADER");
-        setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
       }
     } catch { /* silent */ }
     finally { setLoading(false); }
