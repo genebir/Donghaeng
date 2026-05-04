@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useOrgRole } from "@/hooks/useOrgRole";
 
 const inputClass =
   "w-full rounded-md border border-ink/20 bg-paper px-4 py-2.5 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none";
@@ -12,6 +13,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 export default function NewOutreachPage() {
   const router = useRouter();
   const { orgId } = useParams<{ orgId: string }>();
+  const { isOrgAdmin, loaded: roleLoaded } = useOrgRole();
 
   const [form, setForm] = useState({
     name: "",
@@ -56,6 +58,15 @@ export default function NewOutreachPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (roleLoaded && !isOrgAdmin) {
+    return (
+      <div className="mx-auto max-w-lg py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 조직 관리자만 볼 수 있어요.</p>
+      </div>
+    );
   }
 
   return (

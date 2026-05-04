@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useOrgRole } from "@/hooks/useOrgRole";
 
 type OutreachRole = "DIRECTOR" | "STAFF";
 
@@ -32,6 +33,7 @@ const ROLE_COLOR: Record<OutreachRole, string> = {
 
 export default function OutreachMembersPage() {
   const { outreachId } = useParams<{ outreachId: string }>();
+  const { isOrgAdmin, loaded: roleLoaded } = useOrgRole();
 
   const [members, setMembers] = useState<OutreachMember[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -181,6 +183,15 @@ export default function OutreachMembersPage() {
 
   const getTeamName = (teamId: string | null) =>
     teams.find((t) => t.id === teamId)?.name ?? "—";
+
+  if (roleLoaded && !isOrgAdmin) {
+    return (
+      <div className="mx-auto max-w-[720px] py-20 text-center">
+        <p className="text-body font-medium text-ink">접근 권한이 없어요</p>
+        <p className="mt-2 text-body-sm text-ink-mute">이 페이지는 조직 관리자만 볼 수 있어요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[720px]">
