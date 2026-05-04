@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────
 
@@ -243,11 +244,11 @@ function BudgetEditModal({
 
 export default function BudgetPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const { isAdmin } = useTeamRole();
 
   const [entries, setEntries] = useState<BudgetEntry[]>([]);
   const [meta, setMeta] = useState<BudgetMeta>({ total_planned: "0", total_spent_approved: "0", total_spent_pending: "0" });
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -261,23 +262,11 @@ export default function BudgetPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [budgetRes, meRes] = await Promise.all([
-          fetch(`/api/budget/${teamId}`),
-          fetch("/api/users/me"),
-        ]);
-        if (budgetRes.ok) {
-          const json = await budgetRes.json();
+        const res = await fetch(`/api/budget/${teamId}`);
+        if (res.ok) {
+          const json = await res.json();
           setEntries(json.data ?? []);
           setMeta(json.meta ?? { total_planned: "0", total_spent_approved: "0", total_spent_pending: "0" });
-        }
-        if (meRes.ok) {
-          const me = (await meRes.json()).data;
-          const orgRole = me?.org_role;
-          const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
-          const isDirector = (me?.outreach_memberships ?? []).some((om: { role: string }) => om.role === "DIRECTOR");
-          const isStaff = (me?.outreach_memberships ?? []).some((om: { role: string; team_id: string | null }) => om.role === "STAFF" && om.team_id === teamId);
-          const isLeader = (me?.team_memberships ?? []).some((tm: { team_id: string; role: string }) => tm.team_id === teamId && tm.role === "LEADER");
-          setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
         }
       } catch {
         showToast("데이터를 불러오지 못했어요.", false);
