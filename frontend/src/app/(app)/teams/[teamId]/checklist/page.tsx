@@ -417,6 +417,11 @@ export default function ChecklistPage() {
 
       {loading ? (
         <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-14 animate-pulse rounded-md bg-paper-deep" />)}</div>
+      ) : total === 0 && !isAdmin ? (
+        <div className="py-20 text-center">
+          <p className="text-body text-ink-mute">아직 등록된 준비물이 없어요.</p>
+          <p className="mt-1 text-body-sm text-ink-mute">팀 관리자가 항목을 추가하면 여기에 표시돼요.</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-8">
           {allCategories.map(({ category, label, items: catItems }) => {
