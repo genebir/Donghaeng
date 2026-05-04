@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import type { ExpenseCategory, ExpensePublic, ExpenseStatus } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 // ── 레이블 / 스타일 ─────────────────────────────────────────────────────────
 
@@ -231,6 +232,7 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 export default function ExpensesPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const searchParams = useSearchParams();
+  const { isAdmin } = useTeamRole();
 
   const [allExpenses, setAllExpenses] = useState<ExpensePublic[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
@@ -238,6 +240,9 @@ export default function ExpensesPage() {
     const t = searchParams.get("tab");
     return t === "mine" ? "mine" : "all";
   });
+  // Non-admins always see only their own expenses (backend enforces this).
+  // Drive all rendering from effectiveTab so the tab switcher can be hidden cleanly.
+  const effectiveTab = isAdmin ? tab : "mine";
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
     const s = searchParams.get("status") as StatusFilter | null;
     const valid: StatusFilter[] = ["all", "pending", "approved", "rejected", "reimbursed"];
@@ -280,7 +285,7 @@ export default function ExpensesPage() {
     load();
   }, [teamId, showToast]);
 
-  const tabFiltered = tab === "mine" && meId
+  const tabFiltered = effectiveTab === "mine" && meId
     ? allExpenses.filter((e) => e.purchaser_user_id === meId)
     : allExpenses;
 
@@ -311,20 +316,22 @@ export default function ExpensesPage() {
         </Link>
       </header>
 
-      {/* 전체/내 지출 탭 */}
-      <div className="mb-3 flex gap-1 rounded-md border border-ink/10 bg-paper-deep p-1">
-        {(["all", "mine"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setStatusFilter("all"); }}
-            className={`flex-1 rounded py-1.5 text-body-sm font-medium transition-colors ${
-              tab === t ? "bg-paper text-ink shadow-sm" : "text-ink-mute hover:text-ink"
-            }`}
-          >
-            {t === "all" ? "전체" : "내 지출"}
-          </button>
-        ))}
-      </div>
+      {/* 전체/내 지출 탭 — 관리자만 표시 (팀원은 본인 지출만 보임) */}
+      {isAdmin && (
+        <div className="mb-3 flex gap-1 rounded-md border border-ink/10 bg-paper-deep p-1">
+          {(["all", "mine"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setStatusFilter("all"); }}
+              className={`flex-1 rounded py-1.5 text-body-sm font-medium transition-colors ${
+                tab === t ? "bg-paper text-ink shadow-sm" : "text-ink-mute hover:text-ink"
+              }`}
+            >
+              {t === "all" ? "전체" : "내 지출"}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* 상태 필터 */}
       {!loading && (
@@ -353,10 +360,10 @@ export default function ExpensesPage() {
       )}
 
       {/* 나의 정산 현황 */}
-      {!loading && tab === "mine" && <MySettlementCard teamId={teamId} />}
+      {!loading && effectiveTab === "mine" && <MySettlementCard teamId={teamId} />}
 
       {/* 반려된 지출 알림 */}
-      {!loading && tab === "mine" && rejectedCount > 0 && statusFilter !== "rejected" && (
+      {!loading && effectiveTab === "mine" && rejectedCount > 0 && statusFilter !== "rejected" && (
         <button
           onClick={() => setStatusFilter("rejected")}
           className="mb-4 flex w-full items-center gap-3 rounded-md border border-rust/30 bg-rust/5 px-4 py-3 text-left hover:bg-rust/10 transition-colors"
@@ -384,9 +391,9 @@ export default function ExpensesPage() {
               <p className="text-body text-ink-mute">
                 {statusFilter !== "all"
                   ? `${STATUS_CONFIG[statusFilter as ExpenseStatus]?.label ?? statusFilter} 지출이 없습니다.`
-                  : tab === "mine" ? "등록한 지출이 없습니다." : "등록된 지출이 없습니다."}
+                  : effectiveTab === "mine" ? "등록한 지출이 없습니다." : "등록된 지출이 없습니다."}
               </p>
-              {tab === "all" && statusFilter === "all" && (
+              {effectiveTab === "all" && statusFilter === "all" && (
                 <Link
                   href={`/teams/${teamId}/expenses/new`}
                   className="mt-4 inline-flex h-10 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:opacity-80"
@@ -416,7 +423,7 @@ export default function ExpensesPage() {
                   </div>
                   <ul className="flex flex-col gap-2">
                     {items.map((e) => (
-                      <ExpenseRow key={e.id} expense={e} teamId={teamId} isMine={tab === "mine" || e.purchaser_user_id === meId} />
+                      <ExpenseRow key={e.id} expense={e} teamId={teamId} isMine={effectiveTab === "mine" || e.purchaser_user_id === meId} />
                     ))}
                   </ul>
                 </section>
