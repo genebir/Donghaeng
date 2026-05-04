@@ -46,7 +46,7 @@ export function TeamOnboarding() {
             key: "emergency",
             label: "응급 정보",
             done: !!hasEmergency,
-            href: `/teams/${teamId}/members`,
+            href: `/teams/${teamId}/members?openEmergency=1`,
             action: "입력하기",
           },
           {

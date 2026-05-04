@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 type TeamRole = "LEADER" | "MEMBER";
@@ -356,6 +356,7 @@ function MemberRow({
 
 export default function MembersPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const searchParams = useSearchParams();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,6 +365,7 @@ export default function MembersPage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [emergencyMember, setEmergencyMember] = useState<Member | null>(null);
+  const autoOpenedRef = useRef(false);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -417,13 +419,21 @@ export default function MembersPage() {
         (m: Member) => m.user.id === myData?.id && m.role === "LEADER"
       );
       setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
-      setCurrentUserId(myData?.id ?? null);
+      const myId = myData?.id ?? null;
+      setCurrentUserId(myId);
+
+      // ?openEmergency=1 로 진입하면 내 응급 정보 모달 자동 열기
+      if (myId && !autoOpenedRef.current && searchParams.get("openEmergency") === "1") {
+        autoOpenedRef.current = true;
+        const myMember = (data.data ?? []).find((m: Member) => m.user.id === myId);
+        if (myMember) setEmergencyMember(myMember);
+      }
     } catch {
       setError("멤버 목록을 불러오지 못했어요.");
     } finally {
       setLoading(false);
     }
-  }, [teamId]);
+  }, [teamId, searchParams]);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
 
