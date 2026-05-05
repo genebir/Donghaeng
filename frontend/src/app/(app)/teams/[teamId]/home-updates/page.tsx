@@ -109,6 +109,7 @@ export default function HomeUpdatesPage() {
   const { isAdmin } = useTeamRole();
   const [updates, setUpdates] = useState<HomeUpdatePublic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [writing, setWriting] = useState(false);
   const [editing, setEditing] = useState<HomeUpdatePublic | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -118,21 +119,21 @@ export default function HomeUpdatesPage() {
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 5000);
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/home-updates/${teamId}`);
-        if (res.ok) setUpdates((await res.json()).data ?? []);
-        else showToast("불러오기에 실패했어요.", false);
-      } catch { showToast("불러오기에 실패했어요.", false); }
-      finally { setLoading(false); }
-    };
-    load();
-  }, [teamId, showToast]);
+  const loadUpdates = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const res = await fetch(`/api/home-updates/${teamId}`);
+      if (res.ok) setUpdates((await res.json()).data ?? []);
+      else setLoadError(true);
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
+  }, [teamId]);
+
+  useEffect(() => { loadUpdates(); }, [loadUpdates]);
 
   const handleCreate = async (title: string, content: string) => {
     try {
@@ -286,10 +287,29 @@ export default function HomeUpdatesPage() {
 
       {loading ? (
         <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="h-28 animate-pulse rounded-md bg-paper-deep" />)}</div>
+      ) : loadError ? (
+        <div className="py-16 text-center">
+          <p className="text-body text-ink-mute">소식을 불러오지 못했어요.</p>
+          <button
+            onClick={loadUpdates}
+            className="mt-4 inline-flex h-9 items-center rounded-md border border-ink/25 px-5 text-body-sm text-ink hover:bg-paper-deep"
+          >
+            다시 시도
+          </button>
+        </div>
       ) : updates.length === 0 && !writing ? (
         <div className="py-16 text-center">
           <p className="text-body text-ink-mute">아직 소식이 없어요.</p>
-          <p className="mt-2 text-body-sm text-ink-mute">새 소식을 작성하면 본진에 공유할 수 있어요.</p>
+          {isAdmin ? (
+            <button
+              onClick={() => setWriting(true)}
+              className="mt-4 inline-flex h-9 items-center rounded-md bg-ink px-5 text-body-sm font-medium text-paper hover:bg-ink/90"
+            >
+              + 첫 소식 작성하기
+            </button>
+          ) : (
+            <p className="mt-2 text-body-sm text-ink-mute">팀 관리자가 소식을 올리면 여기에 표시돼요.</p>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
