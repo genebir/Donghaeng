@@ -330,7 +330,7 @@ export default function TestimoniesPage() {
   useEffect(() => {
     if (!writing) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !formContent.trim()) {
         setWriting(false);
         setFormContent("");
         setFormName("");
@@ -339,7 +339,7 @@ export default function TestimoniesPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [writing]);
+  }, [writing, formContent]);
 
   // 클라이언트 필터 + 주목 항목 상단 정렬
   const tabFiltered = filter === "all" ? testimonies : testimonies.filter((t) => t.kind === filter);
@@ -567,10 +567,17 @@ export default function TestimoniesPage() {
         </div>
       ) : displayed.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-body text-ink-mute">
-            아직 {filter === "all" ? "간증이나 기도제목이" : KIND_LABEL[filter as TestimonyKind] + "이"} 없어요.
-          </p>
-          <p className="mt-2 text-body-sm text-ink-mute">QR 코드를 인쇄해 현장에 붙이거나 직접 작성해보세요.</p>
+          {testimonies.length > 0 && filter !== "all" ? (
+            <>
+              <p className="text-body text-ink-mute">{KIND_LABEL[filter as TestimonyKind]}이 아직 없어요.</p>
+              <p className="mt-2 text-body-sm text-ink-mute">다른 탭을 눌러보거나 직접 작성해보세요.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-body text-ink-mute">아직 간증이나 기도제목이 없어요.</p>
+              <p className="mt-2 text-body-sm text-ink-mute">QR 코드를 인쇄해 현장에 붙이거나 직접 작성해보세요.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

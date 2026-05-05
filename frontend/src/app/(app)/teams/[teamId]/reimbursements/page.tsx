@@ -82,6 +82,10 @@ export default function ReimbursementsPage() {
     reimbursements.filter((r) => r.status !== "completed").map((r) => r.recipient_user_id)
   );
   const pendingPreview = preview.filter((p) => !inProgressUserIds.has(p.recipient_user_id));
+  const allSettled =
+    reimbursements.length > 0 &&
+    reimbursements.every((r) => r.status === "completed") &&
+    pendingPreview.length === 0;
 
   if (roleLoaded && !isAdmin) {
     return (
@@ -150,6 +154,12 @@ export default function ReimbursementsPage() {
 
           {/* 기존 정산 목록 */}
           <section>
+            {allSettled && (
+              <div className="mb-6 rounded-md border border-sage/30 bg-sage/8 px-4 py-4 text-center">
+                <p className="text-body font-medium text-sage">모든 정산이 완료됐어요.</p>
+                <p className="mt-1 text-body-sm text-ink-mute">수고하셨습니다. 이번 아웃리치 회계가 마무리됐어요.</p>
+              </div>
+            )}
             {reimbursements.length > 0 && (
               <>
                 <h2 className="mb-3 text-h3 text-ink">정산 내역</h2>
