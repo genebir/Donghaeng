@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 type TeamRole = "LEADER" | "MEMBER";
 type TeamPart = "MEDIA" | "WORSHIP" | "TEACHER" | "FINANCE" | "MEDICAL" | "GENERAL";
@@ -358,9 +359,9 @@ export default function MembersPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const searchParams = useSearchParams();
 
+  const { isAdmin } = useTeamRole();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -403,23 +404,8 @@ export default function MembersPage() {
       if (!res.ok) throw new Error(data.message);
       setMembers(data.data ?? []);
 
-      // 내 프로필로 admin 여부 확인
       const me = await fetch("/api/users/me").then((r) => r.json()).catch(() => ({}));
-      const myData = me?.data;
-      const orgRole = myData?.org_role;
-      const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
-      const isDirector = (myData?.outreach_memberships ?? []).some(
-        (om: { role: string }) => om.role === "DIRECTOR"
-      );
-      const isStaff = (myData?.outreach_memberships ?? []).some(
-        (om: { role: string; team_id: string | null }) =>
-          om.role === "STAFF" && om.team_id === teamId
-      );
-      const isLeader = (data.data ?? []).some(
-        (m: Member) => m.user.id === myData?.id && m.role === "LEADER"
-      );
-      setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
-      const myId = myData?.id ?? null;
+      const myId = me?.data?.id ?? null;
       setCurrentUserId(myId);
 
       // ?openEmergency=1 로 진입하면 내 응급 정보 모달 자동 열기

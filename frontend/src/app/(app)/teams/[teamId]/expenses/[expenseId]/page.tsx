@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { ExpenseCategory, ExpensePublic, ExpenseStatus, PaymentMethod } from "@/types/api";
+import { useTeamRole } from "@/hooks/useTeamRole";
 
 // ── 상수 ──────────────────────────────────────────────────────────────────
 
@@ -285,8 +286,8 @@ export default function ExpenseDetailPage() {
   const [expense, setExpense] = useState<ExpensePublic | null>(null);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const { isAdmin } = useTeamRole();
   const [meId, setMeId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -323,16 +324,6 @@ export default function ExpenseDetailPage() {
         if (meRes.ok) {
           const me = (await meRes.json()).data;
           setMeId(me?.id ?? null);
-          const orgRole = me?.org_role;
-          const isOrgAdmin = orgRole === "OWNER" || orgRole === "ADMIN";
-          const isDirector = (me?.outreach_memberships ?? []).some((om: { role: string }) => om.role === "DIRECTOR");
-          const isStaff = (me?.outreach_memberships ?? []).some(
-            (om: { role: string; team_id: string | null }) => om.role === "STAFF" && om.team_id === teamId
-          );
-          const isLeader = (me?.team_memberships ?? []).some(
-            (tm: { team_id: string; role: string }) => tm.team_id === teamId && tm.role === "LEADER"
-          );
-          setIsAdmin(isOrgAdmin || isDirector || isStaff || isLeader);
         }
       } catch {
         showToast("불러오기에 실패했어요.", false);
