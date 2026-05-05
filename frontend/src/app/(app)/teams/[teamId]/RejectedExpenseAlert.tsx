@@ -4,34 +4,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
-interface ExpenseLite {
-  purchaser_user_id: string;
-  status: string;
-}
-
 export function RejectedExpenseAlert() {
   const { teamId } = useParams<{ teamId: string }>();
   const [count, setCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/expenses/${teamId}`).then((r) => (r.ok ? r.json() : null)),
-      fetch("/api/users/me").then((r) => (r.ok ? r.json() : null)),
-    ])
-      .then(([expJson, meJson]) => {
-        const expenses: ExpenseLite[] = Array.isArray(expJson)
-          ? expJson
-          : (expJson?.data ?? []);
+    fetch("/api/users/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((meJson) => {
         const meId: string | null = meJson?.data?.id ?? null;
-        if (meId) {
-          setCount(
-            expenses.filter(
-              (e) => e.purchaser_user_id === meId && e.status === "rejected"
-            ).length
-          );
-        }
+        if (!meId) return [];
+        return fetch(`/api/expenses/${teamId}?status=rejected&purchaser_user_id=${meId}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((json) => (Array.isArray(json) ? json : (json?.data ?? [])));
       })
+      .then((expenses) => { if (Array.isArray(expenses)) setCount(expenses.length); })
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, [teamId]);
