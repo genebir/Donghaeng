@@ -101,6 +101,12 @@ export default async function SharePage({ params }: Props) {
           <PixelCross />
           <p className="mt-6 text-body text-ci-gray">페이지를 찾을 수 없어요.</p>
           <p className="mt-2 text-body-sm text-ci-gray/60">링크를 다시 확인해 주세요.</p>
+          <a
+            href="/"
+            className="mt-8 inline-flex h-10 items-center rounded-md border border-ci-gray/30 px-5 text-body-sm text-ci-gray hover:border-ci-gray/60 hover:text-paper transition-colors"
+          >
+            홈으로 돌아가기
+          </a>
         </div>
       </main>
     );

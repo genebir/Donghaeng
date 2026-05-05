@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -40,14 +40,24 @@ function ReceiptUpload({
   teamId,
   onUploaded,
   onRemoved,
+  resetSignal,
 }: {
   teamId: string;
   onUploaded: (mediaId: string) => void;
   onRemoved?: () => void;
+  resetSignal?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<ReceiptState>("idle");
   const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (state === "uploading") return;
+    if (preview) URL.revokeObjectURL(preview);
+    setState("idle");
+    setPreview(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal]);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -108,11 +118,11 @@ function ReceiptUpload({
   if (state === "error") {
     return (
       <div className="flex items-center gap-3">
-        <button type="button" onClick={() => { setState("idle"); setPreview(null); }}
+        <input ref={inputRef} type="file" accept="image/*" onChange={onChange} className="sr-only" />
+        <button type="button" onClick={() => { setState("idle"); setPreview(null); inputRef.current?.click(); }}
           className="h-9 rounded-md border border-rust/40 px-4 text-body-sm text-rust hover:bg-rust/5">
           업로드 실패 — 다시 시도
         </button>
-        <input ref={inputRef} type="file" accept="image/*" onChange={onChange} className="sr-only" />
       </div>
     );
   }
@@ -393,7 +403,7 @@ export default function NewExpensePage() {
         <div className="flex flex-col gap-2">
           <p className="text-body-sm font-medium text-ink-soft">영수증</p>
           <ReceiptUpload
-            key={successCount}
+            resetSignal={successCount}
             teamId={teamId}
             onUploaded={(id) => setReceiptMediaId(id)}
             onRemoved={() => setReceiptMediaId(null)}

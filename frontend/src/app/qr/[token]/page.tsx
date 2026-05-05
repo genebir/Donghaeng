@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -37,6 +37,7 @@ export default function QrFormPage() {
   const [content, setContent] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/qr/${token}`)
@@ -99,7 +100,12 @@ export default function QrFormPage() {
               : "간증이 팀에 전달됐어요. 함께 기뻐하겠습니다."}
           </p>
           <button
-            onClick={() => { setState("idle"); setContent(""); setName(""); }}
+            onClick={() => {
+              setState("idle");
+              setContent("");
+              setName("");
+              setTimeout(() => textareaRef.current?.focus(), 80);
+            }}
             className="mt-8 inline-flex h-10 items-center rounded-md border border-paper/20 px-5 text-body-sm text-paper/70 hover:border-paper/40 hover:text-paper transition"
           >
             하나 더 남기기
@@ -176,6 +182,7 @@ export default function QrFormPage() {
                 {kind === "prayer_request" ? "기도제목" : "간증"}
               </span>
               <textarea
+                ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={
@@ -194,7 +201,9 @@ export default function QrFormPage() {
                 }}
                 className="resize-none rounded-md border-2 border-ink/20 bg-transparent px-4 py-3 text-body text-ink placeholder:text-ink-mute focus:border-ink focus:outline-none"
               />
-              <p className="text-right text-caption text-ink-mute">{content.length} / 5000</p>
+              <p className={`text-right text-caption ${content.length > 4500 ? "font-medium text-rust" : "text-ink-mute"}`}>
+                {content.length} / 5000
+              </p>
             </label>
 
             {/* 이름 (선택) */}
