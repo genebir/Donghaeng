@@ -240,7 +240,14 @@ export default function ExpenseReviewPage() {
       {loading ? (
         <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-20 animate-pulse rounded-md bg-paper-deep" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center"><p className="text-body text-ink-mute">해당 상태의 지출이 없어요.</p></div>
+        <div className="py-16 text-center">
+          <p className="text-body text-ink-mute">
+            {tab === "pending" ? "검토 대기 중인 지출이 없어요." : "해당 상태의 지출이 없어요."}
+          </p>
+          {tab === "pending" && expenses.length > 0 && (
+            <p className="mt-2 text-body-sm text-ink-mute">모든 지출이 처리됐어요.</p>
+          )}
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((expense) => {
