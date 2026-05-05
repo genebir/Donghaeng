@@ -142,7 +142,12 @@ export default function TeamSettingsPage() {
   async function handleRevokeInvite() {
     setInviteWorking(true);
     try {
-      await fetch(`/api/teams/${teamId}/invite-token`, { method: "DELETE" });
+      const res = await fetch(`/api/teams/${teamId}/invite-token`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) {
+        const json = await res.json().catch(() => ({}));
+        showToast(json.message ?? "비활성화에 실패했어요.", false);
+        return;
+      }
       setInviteToken(null);
       showToast("초대 링크를 비활성화했어요.", true);
     } catch {
