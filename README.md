@@ -44,6 +44,47 @@ donghaeng/
 
 ---
 
+## 테스트
+
+### 사전 조건
+
+```bash
+# donghaeng_test DB 생성 (1회)
+docker-compose up -d postgres
+docker exec -it donghaeng-postgres-1 psql -U donghaeng -c "CREATE DATABASE donghaeng_test;"
+```
+
+### 실행
+
+```bash
+cd backend
+uv run pytest                                          # 전체 테스트
+uv run pytest -v                                       # 상세 출력
+uv run pytest --cov=app                                # 커버리지 포함
+uv run pytest app/tests/test_expense_flow.py           # 특정 파일만
+```
+
+### 환경변수
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `TEST_DATABASE_URL` | `postgresql+asyncpg://donghaeng:donghaeng@localhost:5433/donghaeng_test` | 테스트용 DB URL |
+
+### 구조
+
+```
+backend/app/tests/
+├── conftest.py          # 픽스처: DB 세션, HTTP 클라이언트, 인증 헤더
+├── factories.py         # 테스트 데이터 팩토리 (make_user, make_team, ...)
+├── test_expense_flow.py # 지출 등록 → 승인/반려 → 재제출 흐름
+├── test_permissions.py  # 권한 경계 (팀원/팀장/외부인)
+└── test_testimony_qr.py # QR 토큰 + 익명 간증 제출
+```
+
+각 테스트는 독립된 DB 트랜잭션 안에서 실행되고 완료 후 롤백 — 테스트 간 데이터 오염 없음.
+
+---
+
 ## 문서
 
 - [`docs/PRODUCT.md`](./docs/PRODUCT.md) — 무엇을 만드는가
