@@ -34,11 +34,15 @@ async function resolveAdmin(teamId: string): Promise<boolean> {
         const isDirector = (me.outreach_memberships ?? []).some(
           (om: { role: string }) => om.role === "DIRECTOR"
         );
+        const isStaff = (me.outreach_memberships ?? []).some(
+          (om: { role: string; team_id: string | null }) =>
+            om.role === "STAFF" && om.team_id === teamId
+        );
         const isLeader = (me.team_memberships ?? []).some(
           (tm: { team_id: string; role: string }) =>
             tm.team_id === teamId && tm.role === "LEADER"
         );
-        return isOrgAdmin || isDirector || isLeader;
+        return isOrgAdmin || isDirector || isStaff || isLeader;
       })
       .then((isAdmin) => {
         cache.set(teamId, { isAdmin, ts: Date.now() });
