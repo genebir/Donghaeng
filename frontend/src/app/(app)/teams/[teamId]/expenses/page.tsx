@@ -384,7 +384,7 @@ export default function ExpensesPage() {
         </div>
       ) : (
         <>
-          {displayed.length > 0 && <Summary expenses={displayed} />}
+          {displayed.length > 0 && statusFilter === "all" && <Summary expenses={displayed} />}
 
           {displayed.length === 0 ? (
             <div className="py-16 text-center">

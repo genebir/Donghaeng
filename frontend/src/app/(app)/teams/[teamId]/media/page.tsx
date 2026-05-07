@@ -344,6 +344,7 @@ export default function MediaPage() {
   const [assets, setAssets] = useState<MediaAssetPublic[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [selected, setSelected] = useState<MediaAssetPublic | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
@@ -356,14 +357,18 @@ export default function MediaPage() {
 
   const loadAssets = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [mediaRes, meRes] = await Promise.all([
         fetch(`/api/media/${teamId}`),
         fetch("/api/users/me"),
       ]);
       if (mediaRes.ok) setAssets((await mediaRes.json()).data ?? []);
+      else setLoadError(true);
       if (meRes.ok) setMeId(((await meRes.json()).data)?.id ?? null);
-    } catch { /* silent */ }
+    } catch {
+      setLoadError(true);
+    }
     finally { setLoading(false); }
   }, [teamId]);
 
@@ -501,7 +506,17 @@ export default function MediaPage() {
         />
       </header>
 
-      {isEmpty ? (
+      {loadError && assets.length === 0 ? (
+        <div className="py-20 text-center">
+          <p className="text-body text-ink-mute">미디어를 불러오지 못했어요.</p>
+          <button
+            onClick={loadAssets}
+            className="mt-4 inline-flex h-9 items-center rounded-md border border-ink/20 px-4 text-body-sm text-ink hover:bg-paper-deep"
+          >
+            다시 시도
+          </button>
+        </div>
+      ) : isEmpty ? (
         <div
           className="flex flex-col items-center justify-center gap-4 rounded-md border-2 border-dashed border-ink/15 py-20 text-center transition-colors hover:border-ink/30"
           onDragOver={(e) => e.preventDefault()}

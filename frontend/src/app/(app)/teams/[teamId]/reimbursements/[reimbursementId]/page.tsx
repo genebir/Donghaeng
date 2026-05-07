@@ -226,7 +226,14 @@ export default function ReimbursementDetailPage() {
     );
   }
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="mx-auto max-w-[600px] py-20 text-center">
+        <p className="text-body font-medium text-ink">불러오기에 실패했어요.</p>
+        <p className="mt-2 text-body-sm text-ink-mute">잠시 후 다시 시도해주세요.</p>
+      </div>
+    );
+  }
 
   const hasBankInfo = data?.recipient_bank_account_number_masked;
 
