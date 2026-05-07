@@ -93,8 +93,31 @@ Organization (예: 우리들교회)
 - 예: `feat(media): 일자별 사진 업로드 API 추가`.
 
 ### 테스트
-- 핵심 비즈니스 로직(미디어 업로드, 권한 체크, 간증 익명화)은 pytest로 단위 테스트.
-- E2E는 7월 직전에 Playwright 한 번만.
+
+**하네스 구조** (`backend/app/tests/`)
+
+```
+conftest.py          # 픽스처: 트랜잭션 격리 DB 세션, httpx AsyncClient, auth_headers()
+factories.py         # make_user / make_org / make_team / make_expense / make_qr_token …
+test_expense_flow.py # 지출 등록→승인/반려→재제출 흐름
+test_permissions.py  # 팀원/팀장/외부인 권한 경계
+test_testimony_qr.py # QR 토큰 + 익명 간증 제출
+```
+
+**핵심 규칙**
+- 팩토리 함수는 반드시 `db.flush()` (commit 금지) — 트랜잭션 롤백으로 격리.
+- 새 도메인 모델을 추가하면 `conftest.py` 상단 import 목록에도 추가할 것 (Base.metadata 등록용).
+- 테스트는 `pytest-asyncio`의 `asyncio_mode = "auto"` 덕분에 `@pytest.mark.asyncio` 불필요.
+- DB URL은 `TEST_DATABASE_URL` 환경변수 (기본: `postgresql+asyncpg://donghaeng:donghaeng@localhost:5433/donghaeng_test`).
+
+**실행**
+```bash
+cd backend
+uv run pytest -v          # 전체
+uv run pytest --cov=app   # 커버리지
+```
+
+E2E는 7월 출국 직전에 Playwright 한 번만.
 
 ---
 
