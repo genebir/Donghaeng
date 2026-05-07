@@ -13,6 +13,9 @@ from app.domains.home_update.schemas import (
     HomeUpdatePublic,
     HomeUpdateUpdate,
 )
+from app.domains.member.models import TeamMember
+from app.domains.notification import service as notif_service
+from app.domains.notification.models import NotificationKind
 from app.domains.testimony.models import Testimony, TestimonyVisibility
 
 # /api/v1/teams/{team_id}/home-updates
@@ -101,6 +104,26 @@ async def publish_home_update(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="팀 관리 권한이 필요합니다.")
     home_update = await _get_update_for_team(db, update_id, access.team.id)
     published = await service.publish(db, home_update)
+
+    # 발행자 제외 팀원 전체에게 알림
+    member_user_ids = list(
+        (await db.execute(
+            select(TeamMember.user_id).where(
+                TeamMember.team_id == access.team.id,
+                TeamMember.user_id != access.user_id,
+            )
+        )).scalars()
+    )
+    for uid in member_user_ids:
+        await notif_service.create_notification(
+            db,
+            recipient_user_id=uid,
+            team_id=access.team.id,
+            kind=NotificationKind.HOME_UPDATE_PUBLISHED,
+            title=f"새 소식: {published.title}",
+            body=published.content[:80] if published.content else None,
+        )
+
     return {"data": _to_dict(published)}
 
 

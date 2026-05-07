@@ -302,6 +302,7 @@ export default function TestimoniesPage() {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [meId, setMeId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -311,17 +312,19 @@ export default function TestimoniesPage() {
   // 항상 전체 목록을 불러오고, 필터는 클라이언트에서 처리
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [tRes, meRes] = await Promise.all([
         fetch(`/api/testimonies/${teamId}`),
         meId === null ? fetch("/api/users/me") : Promise.resolve(null),
       ]);
       if (tRes.ok) setTestimonies((await tRes.json()).data ?? []);
+      else setLoadError(true);
       if (meRes?.ok) {
         const me = (await meRes.json()).data;
         setMeId(me?.id ?? null);
       }
-    } catch { /* silent */ }
+    } catch { setLoadError(true); }
     finally { setLoading(false); }
   }, [teamId]); // meId intentionally excluded to avoid infinite loop
 
@@ -564,6 +567,16 @@ export default function TestimoniesPage() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => <div key={i} className="h-24 animate-pulse rounded-md bg-paper-deep" />)}
+        </div>
+      ) : loadError && testimonies.length === 0 ? (
+        <div className="py-16 text-center">
+          <p className="text-body text-ink-mute">간증 목록을 불러오지 못했어요.</p>
+          <button
+            onClick={load}
+            className="mt-4 inline-flex h-9 items-center rounded-md border border-ink/25 px-5 text-body-sm text-ink hover:bg-paper-deep"
+          >
+            다시 시도
+          </button>
         </div>
       ) : displayed.length === 0 ? (
         <div className="py-16 text-center">

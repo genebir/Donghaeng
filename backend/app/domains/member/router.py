@@ -14,6 +14,8 @@ from app.domains.member.schemas import (
     TeamMemberAdd,
     TeamMemberUpdate,
 )
+from app.domains.notification import service as notif_service
+from app.domains.notification.models import NotificationKind
 
 # /api/v1/teams/{team_id}/members
 nested_router = APIRouter(prefix="/teams/{team_id}/members", tags=["member"])
@@ -27,6 +29,14 @@ async def add_member(
     payload: TeamMemberAdd, team: TeamAdminContext, db: DbSession
 ) -> dict[str, Any]:
     public = await service.add_member_by_email(db, team.id, payload)
+    await notif_service.create_notification(
+        db,
+        recipient_user_id=public.user.id,
+        team_id=team.id,
+        kind=NotificationKind.MEMBER_JOINED,
+        title=f"{team.name} 팀에 합류했어요",
+        body="팀 페이지에서 일정, 준비물, 지출을 확인해보세요.",
+    )
     return {"data": public.model_dump(by_alias=True, mode="json")}
 
 
