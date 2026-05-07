@@ -176,7 +176,7 @@ function ChecklistRow({
           {item.status === "in_progress" && (
             <span className="rounded px-1.5 py-0.5 text-caption bg-mustard/15 text-mustard">진행 중</span>
           )}
-          {item.due_date && <span>마감 {item.due_date}</span>}
+          {item.due_date && <span>마감 {new Date(item.due_date + "T00:00:00").toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}</span>}
           {item.cost_amount && (
             <span>
               {new Intl.NumberFormat("ko-KR", { style: "currency", currency: item.cost_currency, maximumFractionDigits: 0 }).format(parseFloat(item.cost_amount))}
@@ -289,6 +289,7 @@ export default function ChecklistPage() {
   const [addResetKey, setAddResetKey] = useState(0);
   const [hideDone, setHideDone] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const togglingRef = useRef(new Set<string>());
 
   const showToast = useCallback((msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -309,6 +310,8 @@ export default function ChecklistPage() {
   }, [teamId, showToast]);
 
   const handleToggle = async (id: string, nextStatus: ChecklistStatus) => {
+    if (togglingRef.current.has(id)) return;
+    togglingRef.current.add(id);
     const prev = items.find((i) => i.id === id)?.status;
     setItems((all) => all.map((i) => i.id === id ? { ...i, status: nextStatus } : i));
     try {
@@ -324,6 +327,8 @@ export default function ChecklistPage() {
     } catch {
       setItems((all) => all.map((i) => i.id === id ? { ...i, status: prev ?? i.status } : i));
       showToast("잠깐 문제가 있었어요.", false);
+    } finally {
+      togglingRef.current.delete(id);
     }
   };
 
@@ -335,6 +340,8 @@ export default function ChecklistPage() {
       if (!res.ok && res.status !== 204) {
         setItems(backup);
         showToast("삭제에 실패했어요.", false);
+      } else {
+        showToast("삭제됐어요.", true);
       }
     } catch {
       setItems(backup);
