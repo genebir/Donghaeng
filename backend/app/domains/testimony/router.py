@@ -7,6 +7,9 @@ from sqlalchemy import select
 
 from app.core.permissions import TeamAccessContext, _check_team_admin, _resolve_team_membership
 from app.deps import CurrentUser, DbSession
+from app.domains.member.models import TeamMember, TeamRole
+from app.domains.notification import service as notif_service
+from app.domains.notification.models import NotificationKind
 from app.domains.team.models import Team
 from app.domains.testimony import service
 from app.domains.testimony.models import QrToken, Testimony
@@ -260,4 +263,22 @@ async def submit_anonymous_testimony(
     testimony = await service.create_anonymous_testimony(
         db, qr_token.team_id, qr_token.id, payload
     )
+    # 간증 제출 시 팀 리더에게 알림
+    leader_ids = list(
+        (await db.execute(
+            select(TeamMember.user_id).where(
+                TeamMember.team_id == qr_token.team_id,
+                TeamMember.role == TeamRole.LEADER,
+            )
+        )).scalars()
+    )
+    for leader_id in leader_ids:
+        await notif_service.create_notification(
+            db,
+            recipient_user_id=leader_id,
+            team_id=qr_token.team_id,
+            kind=NotificationKind.TESTIMONY_NEW,
+            title="새 간증/기도제목이 도착했어요",
+            body=payload.content[:80] if payload.content else None,
+        )
     return {"data": {"id": str(testimony.id)}}
