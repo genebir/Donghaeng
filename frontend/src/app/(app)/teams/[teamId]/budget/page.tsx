@@ -127,6 +127,17 @@ function BudgetEditModal({
   const [active, setActive] = useState<Set<ExpenseCategory>>(initActive);
   const inputRefs = useRef<Partial<Record<ExpenseCategory, HTMLInputElement | null>>>({});
 
+  const handleSave = useCallback(() => {
+    const result = ALL_CATEGORIES
+      .filter((cat) => active.has(cat))
+      .map((cat) => ({
+        category: cat,
+        planned_amount: parseFloat(amounts[cat] || "0"),
+      }))
+      .filter((e) => e.planned_amount > 0);
+    onSave(result);
+  }, [amounts, active, onSave]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -134,8 +145,7 @@ function BudgetEditModal({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onClose, saving]);
+  }, [onClose, saving, handleSave]);
 
   function toggleCategory(cat: ExpenseCategory) {
     setActive((prev) => {
@@ -149,17 +159,6 @@ function BudgetEditModal({
       }
       return next;
     });
-  }
-
-  function handleSave() {
-    const result = ALL_CATEGORIES
-      .filter((cat) => active.has(cat))
-      .map((cat) => ({
-        category: cat,
-        planned_amount: parseFloat(amounts[cat] || "0"),
-      }))
-      .filter((e) => e.planned_amount > 0);
-    onSave(result);
   }
 
   const liveTotal = ALL_CATEGORIES

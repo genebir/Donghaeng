@@ -88,6 +88,7 @@ export default function ExpenseReviewPage() {
 
   const [expenses, setExpenses] = useState<ExpensePublic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<FilterTab>("pending");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
@@ -99,18 +100,18 @@ export default function ExpenseReviewPage() {
     setTimeout(() => setToast(null), 4000);
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/expenses/${teamId}`);
-        if (res.ok) setExpenses((await res.json()).data ?? []);
-        else showToast("지출 목록을 불러오지 못했어요.", false);
-      } catch { showToast("불러오기에 실패했어요.", false); }
-      finally { setLoading(false); }
-    };
-    load();
-  }, [teamId, showToast]);
+  const loadExpenses = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const res = await fetch(`/api/expenses/${teamId}`);
+      if (res.ok) setExpenses((await res.json()).data ?? []);
+      else setLoadError(true);
+    } catch { setLoadError(true); }
+    finally { setLoading(false); }
+  }, [teamId]);
+
+  useEffect(() => { loadExpenses(); }, [loadExpenses]);
 
   const filtered = tab === "all" ? expenses : expenses.filter((e) => e.status === tab);
   const pendingFiltered = filtered.filter((e) => e.status === "pending");
@@ -239,6 +240,16 @@ export default function ExpenseReviewPage() {
       {/* 목록 */}
       {loading ? (
         <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-20 animate-pulse rounded-md bg-paper-deep" />)}</div>
+      ) : loadError ? (
+        <div className="py-16 text-center">
+          <p className="text-body text-ink-mute">지출 목록을 불러오지 못했어요.</p>
+          <button
+            onClick={loadExpenses}
+            className="mt-4 inline-flex h-9 items-center rounded-md border border-ink/25 px-5 text-body-sm text-ink hover:bg-paper-deep"
+          >
+            다시 시도
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-body text-ink-mute">
